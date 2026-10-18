@@ -35,6 +35,7 @@ target_include_directories(caelestia-headers INTERFACE
 
 add_subdirectory(src/config)
 add_subdirectory(src/utils)
+add_subdirectory(src/scheme)
 
 add_library(caelestia SHARED)
 set_target_properties(caelestia PROPERTIES
