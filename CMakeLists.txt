@@ -7,17 +7,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Sql)
 
-add_library(libcaelestia SHARED
+add_library(caelestia SHARED
     src/utils/cache.cpp
     src/utils/cacheworker.cpp
 )
-target_link_libraries(libcaelestia
+target_link_libraries(caelestia
     PUBLIC
         Qt::Core
         Qt::Gui
         Qt::Sql
 )
-target_include_directories(libcaelestia
+target_include_directories(caelestia
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
