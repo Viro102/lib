@@ -2,6 +2,14 @@ find_package(Qt6 REQUIRED COMPONENTS Test)
 
 set(CMAKE_AUTOMOC ON)
 
-add_executable(test_cache cache.cpp)
-target_link_libraries(test_cache PRIVATE caelestia Qt::Test)
-add_test(NAME cache COMMAND test_cache)
+function(create_test module name)
+    set(target_name "test-${module}-${name}")
+    set(exec_name "test_${module}_${name}")
+
+    add_executable(${target_name} "${name}_test.cpp")
+    set_target_properties(${target_name} PROPERTIES OUTPUT_NAME ${exec_name})
+    target_link_libraries(${target_name} PRIVATE caelestia-${module} Qt::Test)
+    add_test(NAME "${module}_${name}" COMMAND ${exec_name})
+endfunction()
+
+add_subdirectory(utils)

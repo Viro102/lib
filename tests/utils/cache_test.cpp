@@ -1,5 +1,3 @@
-#include "caelestia/utils/cache.hpp"
-
 #include <qdir.h>
 #include <qfile.h>
 #include <qstandardpaths.h>
@@ -7,6 +5,8 @@
 #include <qtest.h>
 
 #include <atomic>
+
+#include "caelestia/utils/cache.hpp"
 
 using namespace caelestia::utils;
 using Qt::StringLiterals::operator""_s;
@@ -220,4 +220,4 @@ private slots:
 
 QTEST_GUILESS_MAIN(TestFileCache)
 
-#include "cache.moc"
+#include "cache_test.moc"
