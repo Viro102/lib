@@ -27,7 +27,8 @@ public:
     [[nodiscard]] qint64 maxSize() const;
     [[nodiscard]] int version() const;
 
-    [[nodiscard]] static QString keyFor(const QString& path, QStringView extraInfo = {});
+    [[nodiscard]] static QString keyFor(QStringView key);
+    [[nodiscard]] static QString keyForPath(const QString& path, QStringView extraInfo = {});
 
     void store(const QString& key, const QByteArray& data);
     void store(const QString& key, Producer producer);

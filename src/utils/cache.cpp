@@ -62,14 +62,17 @@ int Cache::version() const {
     return m_worker->version();
 }
 
-QString Cache::keyFor(const QString& path, QStringView extraInfo) {
+QString Cache::keyFor(QStringView key) {
+    return QString::fromLatin1(QCryptographicHash::hash(key.toUtf8(), QCryptographicHash::Sha256).toHex());
+}
+
+QString Cache::keyForPath(const QString& path, QStringView extraInfo) {
     const QFileInfo info(path);
     if (!info.exists())
         return {};
 
-    const auto raw = u"%1|%2|%3|%4"_s.arg(info.absoluteFilePath(),
-        QString::number(info.lastModified().toSecsSinceEpoch()), QString::number(info.size()), extraInfo);
-    return QString::fromLatin1(QCryptographicHash::hash(raw.toUtf8(), QCryptographicHash::Sha256).toHex());
+    return keyFor(u"%1|%2|%3|%4"_s.arg(info.absoluteFilePath(),
+        QString::number(info.lastModified().toSecsSinceEpoch()), QString::number(info.size()), extraInfo));
 }
 
 void Cache::store(const QString& key, const QByteArray& data) {

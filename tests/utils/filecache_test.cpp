@@ -203,19 +203,19 @@ private slots:
         QVERIFY(!cache.lookup(u"b"_s).result().isEmpty());
     }
 
-    void keyForHashesFileIdentityAndExtraInfo() {
+    void keyForPathHashesFileIdentityAndExtraInfo() {
         const auto path = m_root.filePath(u"source"_s);
-        QVERIFY(FileCache::keyFor(path).isEmpty());
+        QVERIFY(FileCache::keyForPath(path).isEmpty());
 
         writeFile(path, bytes(3, 's'));
-        const auto key = FileCache::keyFor(path);
+        const auto key = FileCache::keyForPath(path);
         QCOMPARE(key.size(), 64);
-        QCOMPARE(FileCache::keyFor(path), key);
-        QCOMPARE_NE(FileCache::keyFor(path, u"v1"), key);
-        QCOMPARE_NE(FileCache::keyFor(path, u"v1"), FileCache::keyFor(path, u"v2"));
+        QCOMPARE(FileCache::keyForPath(path), key);
+        QCOMPARE_NE(FileCache::keyForPath(path, u"v1"), key);
+        QCOMPARE_NE(FileCache::keyForPath(path, u"v1"), FileCache::keyForPath(path, u"v2"));
 
         writeFile(path, bytes(4, 's'));
-        QCOMPARE_NE(FileCache::keyFor(path), key);
+        QCOMPARE_NE(FileCache::keyForPath(path), key);
     }
 };
 
