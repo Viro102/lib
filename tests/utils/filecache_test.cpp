@@ -49,6 +49,7 @@ private slots:
     void createsDirAndIndex() {
         const FileCache cache(u"test"_s, k_maxSize, k_suffix);
         QCOMPARE(cache.dir(), m_dir);
+        QCOMPARE(cache.file(), m_dir + u"/index.db"_s);
         QCOMPARE(cache.maxSize(), k_maxSize);
         QCOMPARE(cache.suffix(), k_suffix);
         QCOMPARE(cache.version(), 1);
@@ -58,11 +59,11 @@ private slots:
 
     void storeAndLookup() {
         FileCache cache(u"test"_s, k_maxSize, k_suffix);
-        QVERIFY(cache.lookup(u"a"_s).isEmpty());
+        QVERIFY(cache.lookup(u"a"_s).result().isEmpty());
 
         cache.store(u"a"_s, bytes(4, 'a'));
-        QTRY_VERIFY(!cache.lookup(u"a"_s).isEmpty());
-        QCOMPARE(cache.lookup(u"a"_s), QUrl::fromLocalFile(pathFor(u"a"_s)));
+        QTRY_VERIFY(!cache.lookup(u"a"_s).result().isEmpty());
+        QCOMPARE(cache.lookup(u"a"_s).result(), QUrl::fromLocalFile(pathFor(u"a"_s)));
 
         QFile file(pathFor(u"a"_s));
         QVERIFY(file.open(QIODevice::ReadOnly));
@@ -73,8 +74,8 @@ private slots:
         FileCache cache(u"test"_s, k_maxSize, k_suffix);
         cache.store({}, bytes(4, 'a'));
         cache.store(u"b"_s, bytes(1, 'b'));
-        QTRY_VERIFY(!cache.lookup(u"b"_s).isEmpty());
-        QVERIFY(cache.lookup({}).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"b"_s).result().isEmpty());
+        QVERIFY(cache.lookup(QString()).result().isEmpty());
         QCOMPARE(QDir(m_dir).entryList({ u"*"_s + k_suffix }, QDir::Files), QStringList{ u"b"_s + k_suffix });
     }
 
@@ -87,12 +88,12 @@ private slots:
         };
 
         cache.store(u"p"_s, producer);
-        QTRY_VERIFY(!cache.lookup(u"p"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"p"_s).result().isEmpty());
         QCOMPARE(calls.load(), 1);
 
         cache.store(u"p"_s, producer);
         cache.store(u"q"_s, bytes(1, 'q'));
-        QTRY_VERIFY(!cache.lookup(u"q"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"q"_s).result().isEmpty());
         QCOMPARE(calls.load(), 1);
     }
 
@@ -102,44 +103,44 @@ private slots:
             return QByteArray();
         });
         cache.store(u"q"_s, bytes(1, 'q'));
-        QTRY_VERIFY(!cache.lookup(u"q"_s).isEmpty());
-        QVERIFY(cache.lookup(u"n"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"q"_s).result().isEmpty());
+        QVERIFY(cache.lookup(u"n"_s).result().isEmpty());
     }
 
     void oversizeEntryIsRefused() {
         FileCache cache(u"test"_s, k_maxSize, k_suffix);
         cache.store(u"big"_s, bytes(k_maxSize + 1, 'x'));
         cache.store(u"q"_s, bytes(1, 'q'));
-        QTRY_VERIFY(!cache.lookup(u"q"_s).isEmpty());
-        QVERIFY(cache.lookup(u"big"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"q"_s).result().isEmpty());
+        QVERIFY(cache.lookup(u"big"_s).result().isEmpty());
     }
 
     void evictsLeastRecentlyUsed() {
         FileCache cache(u"test"_s, k_maxSize, k_suffix);
         cache.store(u"a"_s, bytes(4, 'a'));
-        QTRY_VERIFY(!cache.lookup(u"a"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"a"_s).result().isEmpty());
         QTest::qSleep(1100);
 
         cache.store(u"b"_s, bytes(4, 'b'));
-        QTRY_VERIFY(!cache.lookup(u"b"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"b"_s).result().isEmpty());
         QTest::qSleep(1100);
 
-        QVERIFY(!cache.lookup(u"a"_s).isEmpty());
+        QVERIFY(!cache.lookup(u"a"_s).result().isEmpty());
         cache.store(u"c"_s, bytes(4, 'c'));
-        QTRY_VERIFY(!cache.lookup(u"c"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"c"_s).result().isEmpty());
 
-        QTRY_VERIFY(cache.lookup(u"b"_s).isEmpty());
-        QVERIFY(!cache.lookup(u"a"_s).isEmpty());
+        QTRY_VERIFY(cache.lookup(u"b"_s).result().isEmpty());
+        QVERIFY(!cache.lookup(u"a"_s).result().isEmpty());
         QVERIFY(!QFile::exists(pathFor(u"b"_s)));
     }
 
     void removeDeletesFile() {
         FileCache cache(u"test"_s, k_maxSize, k_suffix);
         cache.store(u"a"_s, bytes(4, 'a'));
-        QTRY_VERIFY(!cache.lookup(u"a"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"a"_s).result().isEmpty());
 
         cache.remove(u"a"_s);
-        QTRY_VERIFY(cache.lookup(u"a"_s).isEmpty());
+        QTRY_VERIFY(cache.lookup(u"a"_s).result().isEmpty());
         QVERIFY(!QFile::exists(pathFor(u"a"_s)));
     }
 
@@ -147,10 +148,10 @@ private slots:
         FileCache cache(u"test"_s, k_maxSize, k_suffix);
         cache.store(u"a"_s, bytes(4, 'a'));
         cache.store(u"b"_s, bytes(4, 'b'));
-        QTRY_VERIFY(!cache.lookup(u"b"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"b"_s).result().isEmpty());
 
         cache.clear();
-        QTRY_VERIFY(cache.lookup(u"a"_s).isEmpty());
+        QTRY_VERIFY(cache.lookup(u"a"_s).result().isEmpty());
         QCOMPARE(QDir(m_dir).entryList(QDir::Files), QStringList{ u"index.db"_s });
     }
 
@@ -158,48 +159,48 @@ private slots:
         {
             FileCache cache(u"test"_s, k_maxSize, k_suffix);
             cache.store(u"gone"_s, bytes(4, 'g'));
-            QTRY_VERIFY(!cache.lookup(u"gone"_s).isEmpty());
+            QTRY_VERIFY(!cache.lookup(u"gone"_s).result().isEmpty());
         }
         QVERIFY(QFile::remove(pathFor(u"gone"_s)));
         writeFile(pathFor(u"orphan"_s), bytes(6, 'o'));
 
         FileCache cache(u"test"_s, k_maxSize, k_suffix);
-        QVERIFY(!cache.lookup(u"orphan"_s).isEmpty());
+        QVERIFY(!cache.lookup(u"orphan"_s).result().isEmpty());
         QTest::qSleep(1100);
 
         cache.store(u"new"_s, bytes(6, 'n'));
-        QTRY_VERIFY(!cache.lookup(u"new"_s).isEmpty());
-        QTRY_VERIFY(cache.lookup(u"orphan"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"new"_s).result().isEmpty());
+        QTRY_VERIFY(cache.lookup(u"orphan"_s).result().isEmpty());
     }
 
     void entriesPersistAcrossInstances() {
         {
             FileCache cache(u"test"_s, k_maxSize, k_suffix);
             cache.store(u"a"_s, bytes(4, 'a'));
-            QTRY_VERIFY(!cache.lookup(u"a"_s).isEmpty());
+            QTRY_VERIFY(!cache.lookup(u"a"_s).result().isEmpty());
         }
         FileCache cache(u"test"_s, k_maxSize, k_suffix);
         cache.store(u"b"_s, bytes(1, 'b'));
-        QTRY_VERIFY(!cache.lookup(u"b"_s).isEmpty());
-        QVERIFY(!cache.lookup(u"a"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"b"_s).result().isEmpty());
+        QVERIFY(!cache.lookup(u"a"_s).result().isEmpty());
     }
 
     void versionBumpWipesCache() {
         {
             FileCache cache(u"test"_s, k_maxSize, k_suffix, 1);
             cache.store(u"a"_s, bytes(4, 'a'));
-            QTRY_VERIFY(!cache.lookup(u"a"_s).isEmpty());
+            QTRY_VERIFY(!cache.lookup(u"a"_s).result().isEmpty());
         }
         {
             FileCache cache(u"test"_s, k_maxSize, k_suffix, 2);
-            QTRY_VERIFY(cache.lookup(u"a"_s).isEmpty());
+            QTRY_VERIFY(cache.lookup(u"a"_s).result().isEmpty());
             cache.store(u"b"_s, bytes(4, 'b'));
-            QTRY_VERIFY(!cache.lookup(u"b"_s).isEmpty());
+            QTRY_VERIFY(!cache.lookup(u"b"_s).result().isEmpty());
         }
         FileCache cache(u"test"_s, k_maxSize, k_suffix, 2);
         cache.store(u"c"_s, bytes(1, 'c'));
-        QTRY_VERIFY(!cache.lookup(u"c"_s).isEmpty());
-        QVERIFY(!cache.lookup(u"b"_s).isEmpty());
+        QTRY_VERIFY(!cache.lookup(u"c"_s).result().isEmpty());
+        QVERIFY(!cache.lookup(u"b"_s).result().isEmpty());
     }
 
     void keyForHashesFileIdentityAndExtraInfo() {
@@ -220,4 +221,4 @@ private slots:
 
 QTEST_GUILESS_MAIN(TestFileCache)
 
-#include "cache_test.moc"
+#include "filecache_test.moc"
