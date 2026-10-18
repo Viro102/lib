@@ -14,7 +14,7 @@ using Qt::StringLiterals::operator""_s;
 namespace {
 
 constexpr qint64 k_maxSize = 10;
-constexpr auto k_suffix = ".bin";
+const auto k_suffix = u".bin"_s;
 
 QByteArray bytes(int n, char c) {
     return { n, c };

@@ -143,7 +143,7 @@ private slots:
             cache.store(u"a"_s, bytes(4, 'a'));
             QCOMPARE(cache.lookup(u"a"_s).result(), bytes(4, 'a'));
         }
-        BlobCache cache(u"test"_s, k_maxSize);
+        const BlobCache cache(u"test"_s, k_maxSize);
         QCOMPARE(cache.lookup(u"a"_s).result(), bytes(4, 'a'));
     }
 
@@ -159,7 +159,7 @@ private slots:
             cache.store(u"b"_s, bytes(4, 'b'));
             QCOMPARE(cache.lookup(u"b"_s).result(), bytes(4, 'b'));
         }
-        BlobCache cache(u"test"_s, k_maxSize, 2);
+        const BlobCache cache(u"test"_s, k_maxSize, 2);
         QCOMPARE(cache.lookup(u"b"_s).result(), bytes(4, 'b'));
     }
 };

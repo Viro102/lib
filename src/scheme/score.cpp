@@ -12,6 +12,8 @@
 
 namespace caelestia::scheme {
 
+using Qt::StringLiterals::operator""_s;
+
 namespace {
 
 constexpr int k_maxSize = 1024 * 1024;
@@ -42,7 +44,7 @@ QList<m3colours::Argb> scoreImage(const QString& path) {
 
     const auto image = reader.read();
     std::vector<m3colours::Argb> pixels;
-    pixels.reserve(static_cast<std::size_t>(image.width()) * image.height());
+    pixels.reserve(static_cast<std::size_t>(image.width()) * static_cast<std::size_t>(image.height()));
     for (int y = 0; y < image.height(); ++y)
         for (int x = 0; x < image.width(); ++x)
             pixels.emplace_back(image.pixel(x, y));
@@ -55,7 +57,7 @@ QList<m3colours::Argb> scoreImage(const QString& path) {
 } // namespace
 
 ScoreCache::ScoreCache()
-    : BlobCache("schemes/scores", k_maxSize, k_cacheVersion) {}
+    : BlobCache(u"schemes/scores"_s, k_maxSize, k_cacheVersion) {}
 
 ScoreCache& ScoreCache::instance() {
     static ScoreCache s_instance;
