@@ -5,7 +5,8 @@
 #include <m3colours/scheme.hpp>
 #include <m3colours/score.hpp>
 
-#include <vector>
+#include <span>
+#include <type_traits>
 
 #include "caelestia/scheme/scheme.hpp"
 #include "scorecache.hpp"
@@ -42,12 +43,10 @@ QList<m3colours::Argb> scoreImage(const QString& path) {
     if (!reader.canRead())
         return {};
 
-    const auto image = reader.read();
-    std::vector<m3colours::Argb> pixels;
-    pixels.reserve(static_cast<std::size_t>(image.width()) * static_cast<std::size_t>(image.height()));
-    for (int y = 0; y < image.height(); ++y)
-        for (int x = 0; x < image.width(); ++x)
-            pixels.emplace_back(image.pixel(x, y));
+    const auto image = reader.read().convertToFormat(QImage::Format_ARGB32);
+    static_assert(sizeof(m3colours::Argb) == sizeof(QRgb) && std::is_standard_layout_v<m3colours::Argb>);
+    const std::span pixels(reinterpret_cast<const m3colours::Argb*>(image.constBits()),
+        static_cast<std::size_t>(image.sizeInBytes()) / sizeof(QRgb));
 
     const auto quant = m3colours::quantise::celebi(pixels, k_maxColours);
     const auto scored = m3colours::score::scoreByCutoff(quant.colourToCount);
