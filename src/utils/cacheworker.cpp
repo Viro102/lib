@@ -35,7 +35,9 @@ CacheWorker::CacheWorker(QString file, qint64 maxSize, int version, QObject* par
     , m_file(std::move(file))
     , m_maxSize(maxSize)
     , m_version(version)
-    , m_connection(QUuid::createUuid().toString()) {}
+    , m_connection(QUuid::createUuid().toString()) {
+    Q_ASSERT(m_version != 0);
+}
 
 CacheWorker::~CacheWorker() {
     m_db.close();
@@ -75,7 +77,10 @@ void CacheWorker::open() {
     prepare();
 
     q.exec(u"PRAGMA user_version"_s);
-    if (q.next() && q.value(0).toInt() != m_version) {
+    const int stored = q.next() ? q.value(0).toInt() : 0;
+    if (stored == 0) {
+        q.exec(u"PRAGMA user_version = %1"_s.arg(m_version));
+    } else if (stored != m_version) {
         qCInfo(lcCache).noquote() << "Cache version changed, clearing" << m_file;
         reconcile();
         clear();
