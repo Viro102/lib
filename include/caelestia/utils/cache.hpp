@@ -1,6 +1,7 @@
 #pragma once
 
 #include <qbytearray.h>
+#include <qfuture.h>
 #include <qstring.h>
 #include <qthread.h>
 #include <qurl.h>
@@ -9,39 +10,62 @@
 
 namespace caelestia::utils {
 
+class CacheWorker;
 class FileCacheWorker;
+class BlobCacheWorker;
 
-class FileCache {
+class Cache {
 public:
-    Q_DISABLE_COPY_MOVE(FileCache)
+    Q_DISABLE_COPY_MOVE(Cache)
 
     using Producer = std::function<QByteArray()>;
 
-    explicit FileCache(const QString& dir, qint64 maxSize, QString suffix = {}, int version = 1);
-    ~FileCache();
+    virtual ~Cache();
 
     [[nodiscard]] static QString cacheDir();
-    [[nodiscard]] QString dir() const;
+    [[nodiscard]] QString file() const;
     [[nodiscard]] qint64 maxSize() const;
-    [[nodiscard]] QString suffix() const;
     [[nodiscard]] int version() const;
 
     [[nodiscard]] static QString keyFor(const QString& path, QStringView extraInfo = {});
-    [[nodiscard]] QString pathFor(const QString& key) const;
 
-    [[nodiscard]] QUrl lookup(const QString& key) const;
     void store(const QString& key, const QByteArray& data);
     void store(const QString& key, Producer producer);
     void remove(const QString& key);
     void clear();
 
+protected:
+    explicit Cache(CacheWorker* worker);
+
+    [[nodiscard]] CacheWorker* worker() const;
+
 private:
-    const QString m_dir;
-    const qint64 m_maxSize;
-    const QString m_suffix;
-    const int m_version;
     QThread m_thread;
-    FileCacheWorker* m_worker;
+    CacheWorker* m_worker;
+};
+
+class FileCache : public Cache {
+public:
+    explicit FileCache(const QString& dir, qint64 maxSize, QString suffix = {}, int version = 1);
+
+    [[nodiscard]] QString dir() const;
+    [[nodiscard]] QString suffix() const;
+    [[nodiscard]] QString pathFor(const QString& key) const;
+
+    [[nodiscard]] QFuture<QUrl> lookup(const QString& key) const;
+
+private:
+    [[nodiscard]] FileCacheWorker* fileWorker() const;
+};
+
+class BlobCache : public Cache {
+public:
+    explicit BlobCache(const QString& name, qint64 maxSize, int version = 1);
+
+    [[nodiscard]] QFuture<QByteArray> lookup(const QString& key) const;
+
+private:
+    [[nodiscard]] BlobCacheWorker* blobWorker() const;
 };
 
 } // namespace caelestia::utils

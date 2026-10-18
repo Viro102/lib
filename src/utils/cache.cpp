@@ -2,10 +2,11 @@
 
 #include <qcryptographichash.h>
 #include <qdatetime.h>
-#include <qfile.h>
 #include <qfileinfo.h>
+#include <qpromise.h>
 #include <qstandardpaths.h>
 
+#include <type_traits>
 #include <utility>
 
 #include "cacheworker.hpp"
@@ -14,44 +15,54 @@ namespace caelestia::utils {
 
 using Qt::StringLiterals::operator""_s;
 
-FileCache::FileCache(const QString& dir, qint64 maxSize, QString suffix, int version)
-    : m_dir(cacheDir() + u'/' + dir)
-    , m_maxSize(maxSize)
-    , m_suffix(std::move(suffix))
-    , m_version(version)
-    , m_worker(new FileCacheWorker(*this)) {
+namespace {
+
+template <typename Read> auto lookupOn(QObject* worker, Read read) {
+    QPromise<std::invoke_result_t<Read>> promise;
+    promise.start();
+    auto future = promise.future();
+    QMetaObject::invokeMethod(
+        worker,
+        [promise = std::move(promise), read = std::move(read)]() mutable {
+            promise.addResult(read());
+            promise.finish();
+        },
+        Qt::QueuedConnection);
+    return future;
+}
+
+} // namespace
+
+Cache::Cache(CacheWorker* worker)
+    : m_worker(worker) {
     m_worker->moveToThread(&m_thread);
     QObject::connect(&m_thread, &QThread::finished, m_worker, &QObject::deleteLater);
     m_thread.start(QThread::LowPriority);
-    QMetaObject::invokeMethod(m_worker, &FileCacheWorker::open, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(m_worker, &CacheWorker::open, Qt::QueuedConnection);
 }
 
-FileCache::~FileCache() {
+Cache::~Cache() {
     m_thread.quit();
     m_thread.wait();
 }
 
-QString FileCache::cacheDir() {
+QString Cache::cacheDir() {
     return QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation) + u"/caelestia"_s;
 }
 
-QString FileCache::dir() const {
-    return m_dir;
+QString Cache::file() const {
+    return m_worker->file();
 }
 
-qint64 FileCache::maxSize() const {
-    return m_maxSize;
+qint64 Cache::maxSize() const {
+    return m_worker->maxSize();
 }
 
-QString FileCache::suffix() const {
-    return m_suffix;
+int Cache::version() const {
+    return m_worker->version();
 }
 
-int FileCache::version() const {
-    return m_version;
-}
-
-QString FileCache::keyFor(const QString& path, QStringView extraInfo) {
+QString Cache::keyFor(const QString& path, QStringView extraInfo) {
     const QFileInfo info(path);
     if (!info.exists())
         return {};
@@ -61,28 +72,7 @@ QString FileCache::keyFor(const QString& path, QStringView extraInfo) {
     return QString::fromLatin1(QCryptographicHash::hash(raw.toUtf8(), QCryptographicHash::Sha256).toHex());
 }
 
-QString FileCache::pathFor(const QString& key) const {
-    return m_dir + u'/' + key + m_suffix;
-}
-
-QUrl FileCache::lookup(const QString& key) const {
-    if (key.isEmpty())
-        return {};
-
-    const auto path = pathFor(key);
-    if (!QFile::exists(path))
-        return {};
-
-    QMetaObject::invokeMethod(
-        m_worker,
-        [worker = m_worker, key] {
-            worker->touch(key);
-        },
-        Qt::QueuedConnection);
-    return QUrl::fromLocalFile(path);
-}
-
-void FileCache::store(const QString& key, const QByteArray& data) {
+void Cache::store(const QString& key, const QByteArray& data) {
     if (key.isEmpty())
         return;
 
@@ -94,7 +84,7 @@ void FileCache::store(const QString& key, const QByteArray& data) {
         Qt::QueuedConnection);
 }
 
-void FileCache::store(const QString& key, Producer producer) {
+void Cache::store(const QString& key, Producer producer) {
     if (key.isEmpty())
         return;
 
@@ -106,7 +96,7 @@ void FileCache::store(const QString& key, Producer producer) {
         Qt::QueuedConnection);
 }
 
-void FileCache::remove(const QString& key) {
+void Cache::remove(const QString& key) {
     QMetaObject::invokeMethod(
         m_worker,
         [worker = m_worker, key] {
@@ -115,8 +105,50 @@ void FileCache::remove(const QString& key) {
         Qt::QueuedConnection);
 }
 
-void FileCache::clear() {
-    QMetaObject::invokeMethod(m_worker, &FileCacheWorker::clear, Qt::QueuedConnection);
+void Cache::clear() {
+    QMetaObject::invokeMethod(m_worker, &CacheWorker::clear, Qt::QueuedConnection);
+}
+
+CacheWorker* Cache::worker() const {
+    return m_worker;
+}
+
+FileCache::FileCache(const QString& dir, qint64 maxSize, QString suffix, int version)
+    : Cache(new FileCacheWorker(cacheDir() + u'/' + dir, maxSize, std::move(suffix), version)) {}
+
+QString FileCache::dir() const {
+    return fileWorker()->dir();
+}
+
+QString FileCache::suffix() const {
+    return fileWorker()->suffix();
+}
+
+QString FileCache::pathFor(const QString& key) const {
+    return fileWorker()->pathFor(key);
+}
+
+QFuture<QUrl> FileCache::lookup(const QString& key) const {
+    return lookupOn(worker(), [worker = fileWorker(), key] {
+        return worker->read(key);
+    });
+}
+
+FileCacheWorker* FileCache::fileWorker() const {
+    return static_cast<FileCacheWorker*>(worker());
+}
+
+BlobCache::BlobCache(const QString& name, qint64 maxSize, int version)
+    : Cache(new BlobCacheWorker(cacheDir() + u'/' + name + u".db"_s, maxSize, version)) {}
+
+QFuture<QByteArray> BlobCache::lookup(const QString& key) const {
+    return lookupOn(worker(), [worker = blobWorker(), key] {
+        return worker->read(key);
+    });
+}
+
+BlobCacheWorker* BlobCache::blobWorker() const {
+    return static_cast<BlobCacheWorker*>(worker());
 }
 
 } // namespace caelestia::utils

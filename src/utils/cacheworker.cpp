@@ -8,7 +8,6 @@
 #include <qsavefile.h>
 #include <qset.h>
 #include <qsqlerror.h>
-#include <qsqlquery.h>
 #include <quuid.h>
 
 #include <utility>
@@ -31,40 +30,56 @@ qint64 now() {
 
 } // namespace
 
-FileCacheWorker::FileCacheWorker(const FileCache& cache, QObject* parent)
+CacheWorker::CacheWorker(QString file, qint64 maxSize, int version, QObject* parent)
     : QObject(parent)
-    , m_cache(cache)
+    , m_file(std::move(file))
+    , m_maxSize(maxSize)
+    , m_version(version)
     , m_connection(QUuid::createUuid().toString()) {}
 
-FileCacheWorker::~FileCacheWorker() {
+CacheWorker::~CacheWorker() {
     m_db.close();
     m_db = QSqlDatabase();
     QSqlDatabase::removeDatabase(m_connection);
 }
 
-void FileCacheWorker::open() {
-    if (!QDir().mkpath(m_cache.dir())) {
-        qCWarning(lcCache).noquote() << "Failed to create cache dir" << m_cache.dir();
+const QString& CacheWorker::file() const {
+    return m_file;
+}
+
+qint64 CacheWorker::maxSize() const {
+    return m_maxSize;
+}
+
+int CacheWorker::version() const {
+    return m_version;
+}
+
+void CacheWorker::open() {
+    const auto dir = QFileInfo(m_file).path();
+    if (!QDir().mkpath(dir)) {
+        qCWarning(lcCache).noquote() << "Failed to create cache dir" << dir;
         return;
     }
 
     m_db = QSqlDatabase::addDatabase(u"QSQLITE"_s, m_connection);
-    m_db.setDatabaseName(m_cache.dir() + u"/index.db"_s);
+    m_db.setDatabaseName(m_file);
     if (!m_db.open()) {
         qCWarning(lcCache).noquote() << "Failed to open cache index:" << m_db.lastError().text();
         return;
     }
 
-    QSqlQuery query(m_db);
-    query.exec(u"CREATE TABLE IF NOT EXISTS entries (key TEXT PRIMARY KEY, bytes INTEGER NOT NULL, "
-               "last_used INTEGER NOT NULL)"_s);
+    auto q = query();
+    q.exec(u"CREATE TABLE IF NOT EXISTS entries (key TEXT PRIMARY KEY, bytes INTEGER NOT NULL, "
+           "last_used INTEGER NOT NULL)"_s);
+    prepare();
 
-    query.exec(u"PRAGMA user_version"_s);
-    if (query.next() && query.value(0).toInt() != m_cache.version()) {
-        qCInfo(lcCache).noquote() << "Cache version changed, clearing" << m_cache.dir();
+    q.exec(u"PRAGMA user_version"_s);
+    if (q.next() && q.value(0).toInt() != m_version) {
+        qCInfo(lcCache).noquote() << "Cache version changed, clearing" << m_file;
         reconcile();
         clear();
-        query.exec(u"PRAGMA user_version = %1"_s.arg(m_cache.version()));
+        q.exec(u"PRAGMA user_version = %1"_s.arg(m_version));
         return;
     }
 
@@ -72,16 +87,16 @@ void FileCacheWorker::open() {
     evict();
 }
 
-void FileCacheWorker::touch(const QString& key) {
-    QSqlQuery query(m_db);
-    query.prepare(u"UPDATE entries SET last_used = :now WHERE key = :key"_s);
-    query.bindValue(u":now"_s, now());
-    query.bindValue(u":key"_s, key);
-    query.exec();
+void CacheWorker::touch(const QString& key) {
+    auto q = query();
+    q.prepare(u"UPDATE entries SET last_used = :now WHERE key = :key"_s);
+    q.bindValue(u":now"_s, now());
+    q.bindValue(u":key"_s, key);
+    q.exec();
 }
 
-void FileCacheWorker::store(const QString& key, const FileCache::Producer& producer) {
-    if (QFile::exists(m_cache.pathFor(key)))
+void CacheWorker::store(const QString& key, const Cache::Producer& producer) {
+    if (contains(key))
         return;
 
     const auto data = producer();
@@ -92,86 +107,65 @@ void FileCacheWorker::store(const QString& key, const FileCache::Producer& produ
     store(key, data);
 }
 
-void FileCacheWorker::store(const QString& key, const QByteArray& data) {
-    if (data.size() > m_cache.maxSize())
+void CacheWorker::store(const QString& key, const QByteArray& data) {
+    if (data.size() > m_maxSize)
         return;
 
-    QSaveFile file(m_cache.pathFor(key));
-    if (!file.open(QIODevice::WriteOnly) || file.write(data) != data.size() || !file.commit()) {
-        qCWarning(lcCache).noquote() << "Failed to write" << file.fileName() << file.errorString();
+    if (!write(key, data))
         return;
-    }
 
-    QSqlQuery query(m_db);
-    query.prepare(u"INSERT OR REPLACE INTO entries (key, bytes, last_used) VALUES (:key, :bytes, :now)"_s);
-    query.bindValue(u":key"_s, key);
-    query.bindValue(u":bytes"_s, data.size());
-    query.bindValue(u":now"_s, now());
-    query.exec();
-
+    index(key, data.size());
     qCDebug(lcCache).noquote() << "Stored" << key << data.size() << "bytes";
     evict();
 }
 
-void FileCacheWorker::remove(const QString& key) {
-    QFile::remove(m_cache.pathFor(key));
+void CacheWorker::remove(const QString& key) {
+    erase(key);
     forget(key);
 }
 
-void FileCacheWorker::clear() {
-    QSqlQuery query(m_db);
-    query.exec(u"SELECT key FROM entries"_s);
-    while (query.next())
-        QFile::remove(m_cache.pathFor(query.value(0).toString()));
-    query.exec(u"DELETE FROM entries"_s);
+void CacheWorker::clear() {
+    auto q = query();
+    q.exec(u"SELECT key FROM entries"_s);
+    while (q.next())
+        erase(q.value(0).toString());
+    q.exec(u"DELETE FROM entries"_s);
 }
 
-void FileCacheWorker::reconcile() {
-    QSet<QString> indexed;
-    QSqlQuery query(m_db);
-    query.exec(u"SELECT key FROM entries"_s);
-    while (query.next())
-        indexed.insert(query.value(0).toString());
-
-    QSet<QString> onDisk;
-    const auto files =
-        QDir(m_cache.dir())
-            .entryInfoList({ u"*"_s + m_cache.pathFor({}).sliced(m_cache.dir().size() + 1) }, QDir::Files);
-    for (const auto& info : files) {
-        if (info.fileName() == u"index.db"_s)
-            continue;
-
-        const auto key = info.completeBaseName();
-        onDisk.insert(key);
-        if (indexed.contains(key))
-            continue;
-
-        query.prepare(u"INSERT INTO entries (key, bytes, last_used) VALUES (:key, :bytes, :now)"_s);
-        query.bindValue(u":key"_s, key);
-        query.bindValue(u":bytes"_s, info.size());
-        query.bindValue(u":now"_s, now());
-        query.exec();
-    }
-
-    for (const QString& key : indexed)
-        if (!onDisk.contains(key))
-            forget(key);
+QSqlQuery CacheWorker::query() const {
+    return QSqlQuery(m_db);
 }
 
-void FileCacheWorker::evict() {
-    QSqlQuery query(m_db);
-    query.exec(u"SELECT COALESCE(SUM(bytes), 0) FROM entries"_s);
-    qint64 total = query.next() ? query.value(0).toLongLong() : 0;
-    if (total <= m_cache.maxSize())
+void CacheWorker::index(const QString& key, qint64 bytes) {
+    auto q = query();
+    q.prepare(u"INSERT OR REPLACE INTO entries (key, bytes, last_used) VALUES (:key, :bytes, :now)"_s);
+    q.bindValue(u":key"_s, key);
+    q.bindValue(u":bytes"_s, bytes);
+    q.bindValue(u":now"_s, now());
+    q.exec();
+}
+
+void CacheWorker::forget(const QString& key) {
+    auto q = query();
+    q.prepare(u"DELETE FROM entries WHERE key = :key"_s);
+    q.bindValue(u":key"_s, key);
+    q.exec();
+}
+
+void CacheWorker::evict() {
+    auto q = query();
+    q.exec(u"SELECT COALESCE(SUM(bytes), 0) FROM entries"_s);
+    qint64 total = q.next() ? q.value(0).toLongLong() : 0;
+    if (total <= m_maxSize)
         return;
 
     QStringList stale;
-    query.exec(u"SELECT key, bytes FROM entries ORDER BY last_used ASC"_s);
-    while (total > m_cache.maxSize() && query.next()) {
-        stale << query.value(0).toString();
-        total -= query.value(1).toLongLong();
+    q.exec(u"SELECT key, bytes FROM entries ORDER BY last_used ASC"_s);
+    while (total > m_maxSize && q.next()) {
+        stale << q.value(0).toString();
+        total -= q.value(1).toLongLong();
     }
-    query.finish();
+    q.finish();
 
     for (const auto& key : std::as_const(stale)) {
         remove(key);
@@ -179,11 +173,118 @@ void FileCacheWorker::evict() {
     }
 }
 
-void FileCacheWorker::forget(const QString& key) {
-    QSqlQuery query(m_db);
-    query.prepare(u"DELETE FROM entries WHERE key = :key"_s);
-    query.bindValue(u":key"_s, key);
-    query.exec();
+FileCacheWorker::FileCacheWorker(QString dir, qint64 maxSize, QString suffix, int version, QObject* parent)
+    : CacheWorker(dir + u"/index.db"_s, maxSize, version, parent)
+    , m_dir(std::move(dir))
+    , m_suffix(std::move(suffix)) {}
+
+const QString& FileCacheWorker::dir() const {
+    return m_dir;
+}
+
+const QString& FileCacheWorker::suffix() const {
+    return m_suffix;
+}
+
+QString FileCacheWorker::pathFor(const QString& key) const {
+    return m_dir + u'/' + key + m_suffix;
+}
+
+QUrl FileCacheWorker::read(const QString& key) {
+    const auto path = pathFor(key);
+    if (key.isEmpty() || !QFile::exists(path))
+        return {};
+
+    touch(key);
+    return QUrl::fromLocalFile(path);
+}
+
+void FileCacheWorker::reconcile() {
+    QSet<QString> indexed;
+    auto q = query();
+    q.exec(u"SELECT key FROM entries"_s);
+    while (q.next())
+        indexed.insert(q.value(0).toString());
+
+    QSet<QString> onDisk;
+    const auto files = QDir(m_dir).entryInfoList({ u"*"_s + m_suffix }, QDir::Files);
+    for (const auto& info : files) {
+        if (info.filePath() == file())
+            continue;
+
+        const auto key = info.completeBaseName();
+        onDisk.insert(key);
+        if (!indexed.contains(key))
+            index(key, info.size());
+    }
+
+    for (const QString& key : indexed)
+        if (!onDisk.contains(key))
+            forget(key);
+}
+
+bool FileCacheWorker::contains(const QString& key) const {
+    return QFile::exists(pathFor(key));
+}
+
+bool FileCacheWorker::write(const QString& key, const QByteArray& data) {
+    QSaveFile file(pathFor(key));
+    if (!file.open(QIODevice::WriteOnly) || file.write(data) != data.size() || !file.commit()) {
+        qCWarning(lcCache).noquote() << "Failed to write" << file.fileName() << file.errorString();
+        return false;
+    }
+    return true;
+}
+
+void FileCacheWorker::erase(const QString& key) {
+    QFile::remove(pathFor(key));
+}
+
+QByteArray BlobCacheWorker::read(const QString& key) {
+    auto q = query();
+    q.prepare(u"SELECT data FROM blobs WHERE key = :key"_s);
+    q.bindValue(u":key"_s, key);
+    if (!q.exec() || !q.next())
+        return {};
+
+    touch(key);
+    return q.value(0).toByteArray();
+}
+
+void BlobCacheWorker::prepare() {
+    query().exec(u"CREATE TABLE IF NOT EXISTS blobs (key TEXT PRIMARY KEY, data BLOB NOT NULL)"_s);
+}
+
+void BlobCacheWorker::reconcile() {
+    auto q = query();
+    q.exec(u"DELETE FROM entries WHERE key NOT IN (SELECT key FROM blobs)"_s);
+    q.exec(u"DELETE FROM blobs WHERE key NOT IN (SELECT key FROM entries)"_s);
+}
+
+bool BlobCacheWorker::contains(const QString& key) const {
+    auto q = query();
+    q.prepare(u"SELECT 1 FROM blobs WHERE key = :key"_s);
+    q.bindValue(u":key"_s, key);
+    return q.exec() && q.next();
+}
+
+bool BlobCacheWorker::write(const QString& key, const QByteArray& data) {
+    auto q = query();
+    q.prepare(u"INSERT OR REPLACE INTO blobs (key, data) VALUES (:key, :data)"_s);
+    q.bindValue(u":key"_s, key);
+    q.bindValue(u":data"_s, data);
+    if (q.exec())
+        return true;
+
+    qCWarning(lcCache).noquote() << "Failed to write" << key << q.lastError().text();
+    return false;
+}
+
+void BlobCacheWorker::erase(const QString& key) {
+    auto q = query();
+    q.prepare(u"DELETE FROM blobs WHERE key = :key"_s);
+    q.bindValue(u":key"_s, key);
+    q.exec();
 }
 
 } // namespace caelestia::utils
