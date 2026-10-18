@@ -79,9 +79,7 @@ QByteArray coloursToBytes(const SchemeColours& colours) {
 
 } // namespace
 
-QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Scheme::Mode mode) {
-    // TODO
-}
+QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Scheme::Mode mode) {}
 
 QFuture<Scheme> schemeForPath(const QString& path, m3colours::scheme::Variant flavour, Scheme::Mode mode) {
     auto& cache = SchemeCache::instance();
