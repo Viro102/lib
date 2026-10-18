@@ -3,6 +3,7 @@ secondaryPaletteKeyColour 78748e
 tertiaryPaletteKeyColour a1638b
 neutralPaletteKeyColour 78767b
 neutralVariantPaletteKeyColour 787680
+errorPaletteKeyColour de3730
 background 141317
 onBackground e5e1e7
 surface 141317
