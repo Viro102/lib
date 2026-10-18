@@ -4,23 +4,24 @@ project(libcaelestia LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Sql)
 
-add_library(caelestia SHARED
-    src/utils/cache.cpp
-    src/utils/cacheworker.cpp
+add_library(caelestia-headers INTERFACE)
+target_include_directories(caelestia-headers INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
+
+add_subdirectory(src/utils)
+
+add_library(caelestia SHARED)
+add_library(caelestia::caelestia ALIAS caelestia)
 target_link_libraries(caelestia
     PUBLIC
-        Qt::Core
-        Qt::Gui
-        Qt::Sql
-)
-target_include_directories(caelestia
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+        caelestia-headers
+        caelestia-utils
 )
 
 include(CTest)
