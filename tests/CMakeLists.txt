@@ -12,4 +12,5 @@ function(create_test module name)
     add_test(NAME "${module}_${name}" COMMAND ${exec_name})
 endfunction()
 
+add_subdirectory(config)
 add_subdirectory(utils)
