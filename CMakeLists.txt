@@ -14,6 +14,7 @@ target_include_directories(caelestia-headers INTERFACE
     $<INSTALL_INTERFACE:include>
 )
 
+add_subdirectory(src/config)
 add_subdirectory(src/utils)
 
 add_library(caelestia SHARED)
@@ -21,6 +22,7 @@ add_library(caelestia::caelestia ALIAS caelestia)
 target_link_libraries(caelestia
     PUBLIC
         caelestia-headers
+        caelestia-config
         caelestia-utils
 )
 
