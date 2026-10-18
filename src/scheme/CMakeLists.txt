@@ -6,6 +6,7 @@ FetchContent_Declare(m3colours
 FetchContent_MakeAvailable(m3colours)
 
 add_library(caelestia-scheme OBJECT
+    generator.cpp
     score.cpp
 )
 target_link_libraries(caelestia-scheme
