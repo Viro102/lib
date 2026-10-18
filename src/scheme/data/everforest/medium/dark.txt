@@ -1,8 +1,8 @@
-primary_paletteKeyColor 7FBBB3
-secondary_paletteKeyColor 83C092
-tertiary_paletteKeyColor A7C080
-neutral_paletteKeyColor 2E383C
-neutral_variant_paletteKeyColor 374145
+primaryPaletteKeyColour 7FBBB3
+secondaryPaletteKeyColour 83C092
+tertiaryPaletteKeyColour A7C080
+neutralPaletteKeyColour 2E383C
+neutralVariantPaletteKeyColour 374145
 background 2D353B
 onBackground D3C6AA
 surface 343F44

@@ -1,8 +1,8 @@
-primary_paletteKeyColor 7AA2F7
-secondary_paletteKeyColor 9ECE6A
-tertiary_paletteKeyColor BB9AF7
-neutral_paletteKeyColor 1A1B26
-neutral_variant_paletteKeyColor 292E42
+primaryPaletteKeyColour 7AA2F7
+secondaryPaletteKeyColour 9ECE6A
+tertiaryPaletteKeyColour BB9AF7
+neutralPaletteKeyColour 1A1B26
+neutralVariantPaletteKeyColour 292E42
 background 1A1B26
 onBackground C0CAF5
 surface 24283B

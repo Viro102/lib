@@ -1,8 +1,8 @@
-primary_paletteKeyColor 2d8194
-secondary_paletteKeyColor 607b83
-tertiary_paletteKeyColor 8e69a1
-neutral_paletteKeyColor 747879
-neutral_variant_paletteKeyColor 6f797c
+primaryPaletteKeyColour 2d8194
+secondaryPaletteKeyColour 607b83
+tertiaryPaletteKeyColour 8e69a1
+neutralPaletteKeyColour 747879
+neutralVariantPaletteKeyColour 6f797c
 background 101415
 onBackground e0e3e4
 surface 101415

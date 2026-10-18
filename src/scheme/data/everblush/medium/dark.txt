@@ -1,8 +1,8 @@
-primary_paletteKeyColor 8CCFB0
-secondary_paletteKeyColor E5C76B
-tertiary_paletteKeyColor E5A5C5
-neutral_paletteKeyColor 2D3139
-neutral_variant_paletteKeyColor 3A3F4B
+primaryPaletteKeyColour 8CCFB0
+secondaryPaletteKeyColour E5C76B
+tertiaryPaletteKeyColour E5A5C5
+neutralPaletteKeyColour 2D3139
+neutralVariantPaletteKeyColour 3A3F4B
 background 141B1E
 onBackground E8E8E8
 surface 232A2D

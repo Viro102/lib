@@ -1,8 +1,8 @@
-primary_paletteKeyColor 88C0D0
-secondary_paletteKeyColor 81A1C1
-tertiary_paletteKeyColor 5E81AC
-neutral_paletteKeyColor 3B4252
-neutral_variant_paletteKeyColor 434C5E
+primaryPaletteKeyColour 88C0D0
+secondaryPaletteKeyColour 81A1C1
+tertiaryPaletteKeyColour 5E81AC
+neutralPaletteKeyColour 3B4252
+neutralVariantPaletteKeyColour 434C5E
 background 2E3440
 onBackground ECEFF4
 surface 3B4252

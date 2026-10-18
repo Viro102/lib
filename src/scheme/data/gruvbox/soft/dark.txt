@@ -1,8 +1,8 @@
-primary_paletteKeyColor a46a32
-secondary_paletteKeyColor 907156
-tertiary_paletteKeyColor 767c33
-neutral_paletteKeyColor 7e756f
-neutral_variant_paletteKeyColor 847468
+primaryPaletteKeyColour a46a32
+secondaryPaletteKeyColour 907156
+tertiaryPaletteKeyColour 767c33
+neutralPaletteKeyColour 7e756f
+neutralVariantPaletteKeyColour 847468
 background 18120e
 onBackground ece0d9
 surface 18120e

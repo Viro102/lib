@@ -1,8 +1,8 @@
-primary_paletteKeyColor 5878ab
-secondary_paletteKeyColor 6c778d
-tertiary_paletteKeyColor 966799
-neutral_paletteKeyColor 76777b
-neutral_variant_paletteKeyColor 747780
+primaryPaletteKeyColour 5878ab
+secondaryPaletteKeyColour 6c778d
+tertiaryPaletteKeyColour 966799
+neutralPaletteKeyColour 76777b
+neutralVariantPaletteKeyColour 747780
 background 121317
 onBackground e3e2e7
 surface 121317

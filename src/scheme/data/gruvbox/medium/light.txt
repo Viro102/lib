@@ -1,8 +1,8 @@
-primary_paletteKeyColor 857829
-secondary_paletteKeyColor 7f7753
-tertiary_paletteKeyColor 5f8146
-neutral_paletteKeyColor 7a776f
-neutral_variant_paletteKeyColor 7b7767
+primaryPaletteKeyColour 857829
+secondaryPaletteKeyColour 7f7753
+tertiaryPaletteKeyColour 5f8146
+neutralPaletteKeyColour 7a776f
+neutralVariantPaletteKeyColour 7b7767
 background fef9ee
 onBackground 1d1c15
 surface fef9ee

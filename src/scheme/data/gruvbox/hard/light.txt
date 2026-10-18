@@ -1,8 +1,8 @@
-primary_paletteKeyColor 7d7a2e
-secondary_paletteKeyColor 7b7956
-tertiary_paletteKeyColor 57824d
-neutral_paletteKeyColor 79776f
-neutral_variant_paletteKeyColor 7a7868
+primaryPaletteKeyColour 7d7a2e
+secondaryPaletteKeyColour 7b7956
+tertiaryPaletteKeyColour 57824d
+neutralPaletteKeyColour 79776f
+neutralVariantPaletteKeyColour 7a7868
 background fdf9ef
 onBackground 1c1c16
 surface fdf9ef

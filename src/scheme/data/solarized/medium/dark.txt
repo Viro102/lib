@@ -1,8 +1,8 @@
-primary_paletteKeyColor 268BD2
-secondary_paletteKeyColor 2AA198
-tertiary_paletteKeyColor 6C71C4
-neutral_paletteKeyColor 002B36
-neutral_variant_paletteKeyColor 073642
+primaryPaletteKeyColour 268BD2
+secondaryPaletteKeyColour 2AA198
+tertiaryPaletteKeyColour 6C71C4
+neutralPaletteKeyColour 002B36
+neutralVariantPaletteKeyColour 073642
 background 002B36
 onBackground FDF6E3
 surface 073642

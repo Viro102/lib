@@ -1,8 +1,8 @@
-primary_paletteKeyColor BD93F9
-secondary_paletteKeyColor 50FA7B
-tertiary_paletteKeyColor FF79C6
-neutral_paletteKeyColor 282A36
-neutral_variant_paletteKeyColor 44475A
+primaryPaletteKeyColour BD93F9
+secondaryPaletteKeyColour 50FA7B
+tertiaryPaletteKeyColour FF79C6
+neutralPaletteKeyColour 282A36
+neutralVariantPaletteKeyColour 44475A
 background 282A36
 onBackground F8F8F2
 surface 343746
