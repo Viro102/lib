@@ -53,6 +53,7 @@ target_include_directories(caelestia-headers INTERFACE
 
 add_subdirectory(src/config)
 add_subdirectory(src/utils)
+add_subdirectory(src/media)
 add_subdirectory(src/scheme)
 
 add_library(caelestia SHARED)
@@ -70,6 +71,7 @@ target_link_libraries(caelestia
         Qt::Gui
     PRIVATE
         caelestia-config
+        caelestia-media
         caelestia-scheme
         caelestia-utils
 )

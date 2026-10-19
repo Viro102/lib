@@ -13,7 +13,7 @@ extern "C" {
 #include <cmath>
 #include <memory>
 
-namespace caelestia::scheme {
+namespace caelestia::media {
 
 namespace {
 
@@ -160,7 +160,7 @@ std::vector<m3colours::Argb> videoPixels(const QString& path, int samples, std::
             break;
 
         scaled.resize(static_cast<std::size_t>(size.width()) * static_cast<std::size_t>(size.height()));
-        std::uint8_t* dst[] = { reinterpret_cast<std::uint8_t*>(scaled.data()) };
+        std::uint8_t* const dst[] = { reinterpret_cast<std::uint8_t*>(scaled.data()) };
         const int stride[] = { size.width() * static_cast<int>(sizeof(QRgb)) };
         sws_scale(scaler.get(), frame->data, frame->linesize, 0, frame->height, dst, stride);
 
@@ -179,4 +179,4 @@ QSize sampleSize(int width, int height, std::size_t targetPixels) {
     return { static_cast<int>(std::ceil(width * factor)), static_cast<int>(std::ceil(height * factor)) };
 }
 
-} // namespace caelestia::scheme
+} // namespace caelestia::media

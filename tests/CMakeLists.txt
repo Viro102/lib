@@ -18,5 +18,6 @@ function(create_test module name)
 endfunction()
 
 add_subdirectory(config)
+add_subdirectory(media)
 add_subdirectory(scheme)
 add_subdirectory(utils)

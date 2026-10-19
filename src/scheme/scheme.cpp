@@ -16,6 +16,7 @@
 #include <type_traits>
 
 #include "caelestia/config/paths.hpp"
+#include "caelestia/media/analysis.hpp"
 #include "generator.hpp"
 #include "schemecache.hpp"
 
@@ -283,6 +284,16 @@ SchemeCache& SchemeCache::instance() {
 QString SchemeCache::keyFor(m3colours::Argb sourceColour, m3colours::scheme::Variant flavour, Scheme::Mode mode) {
     return utils::Cache::keyFor(
         u"%1|%2|%3"_s.arg(QString::number(sourceColour.value(), 16), toString(flavour), toString(mode)));
+}
+
+QList<m3colours::Argb> coloursForImage(const QImage& image) {
+    return media::analyseImage(image).colours;
+}
+
+QFuture<QList<m3colours::Argb>> coloursForPath(const QString& path) {
+    return media::analyseForPath(path).then([](const media::Analysis& analysis) {
+        return analysis.colours;
+    });
 }
 
 } // namespace caelestia::scheme

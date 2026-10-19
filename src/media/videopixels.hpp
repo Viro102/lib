@@ -8,9 +8,9 @@
 #include <cstddef>
 #include <vector>
 
-namespace caelestia::scheme {
+namespace caelestia::media {
 
 QSize sampleSize(int width, int height, std::size_t targetPixels);
 std::vector<m3colours::Argb> videoPixels(const QString& path, int samples, std::size_t pixelsPerFrame);
 
-} // namespace caelestia::scheme
+} // namespace caelestia::media
