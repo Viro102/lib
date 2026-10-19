@@ -1,12 +1,13 @@
 #include "util.hpp"
 
-#include <csignal>
 #include <qdir.h>
 #include <qfile.h>
 #include <qfileinfo.h>
 #include <qprocess.h>
 #include <qsavefile.h>
 #include <qstandardpaths.h>
+
+#include <csignal>
 
 namespace caelestia::theme {
 

@@ -11,7 +11,6 @@ class ConfigTheme {
 public:
     Q_DISABLE_COPY_MOVE(ConfigTheme)
 
-
     [[nodiscard]] bool targetEnabled(QStringView target) const;
     void setTargetEnabled(QStringView target, bool enabled) const;
 

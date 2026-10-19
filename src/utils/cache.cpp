@@ -71,8 +71,8 @@ QString Cache::keyForPath(const QString& path, QStringView extraInfo) {
     if (!info.exists())
         return {};
 
-    return keyFor(u"%1|%2|%3|%4"_s.arg(info.absoluteFilePath(),
-        QString::number(info.lastModified().toSecsSinceEpoch()), QString::number(info.size()), extraInfo));
+    return keyFor(u"%1|%2|%3|%4"_s.arg(info.absoluteFilePath(), QString::number(info.lastModified().toSecsSinceEpoch()),
+        QString::number(info.size()), extraInfo));
 }
 
 void Cache::store(const QString& key, const QByteArray& data) {

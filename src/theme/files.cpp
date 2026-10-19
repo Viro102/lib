@@ -1,6 +1,7 @@
-#include <csignal>
 #include <qfile.h>
 #include <qfileinfo.h>
+
+#include <csignal>
 
 #include "caelestia/theme/theme.hpp"
 #include "util.hpp"
