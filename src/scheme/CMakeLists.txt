@@ -18,6 +18,7 @@ target_link_libraries(caelestia-scheme
         m3colours::m3colours
         Qt::Core
         Qt::Gui
+        Qt::Multimedia
 )
 
 file(GLOB_RECURSE scheme_files

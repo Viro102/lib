@@ -43,7 +43,7 @@ endif()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Sql)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Sql Multimedia)
 
 add_library(caelestia-headers INTERFACE)
 target_include_directories(caelestia-headers INTERFACE

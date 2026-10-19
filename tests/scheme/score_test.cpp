@@ -13,6 +13,14 @@ using Qt::StringLiterals::operator""_s;
 namespace {
 
 constexpr Argb k_sourceColour{ 0xFF2962FF };
+constexpr Argb k_firstFrameColour{ 0xFFD50000 };
+constexpr int k_tolerance = 4;
+
+bool closeTo(Argb a, Argb b) {
+    return qAbs(qRed(a.value()) - qRed(b.value())) <= k_tolerance &&
+           qAbs(qGreen(a.value()) - qGreen(b.value())) <= k_tolerance &&
+           qAbs(qBlue(a.value()) - qBlue(b.value())) <= k_tolerance;
+}
 
 } // namespace
 
@@ -62,6 +70,24 @@ private slots:
     void coloursFromPath() {
         const auto colours = coloursForPath(m_path).result();
         QCOMPARE(colours, coloursForImage(m_image));
+    }
+
+    void coloursFromAnimatedImage() {
+        const auto path = QFINDTESTDATA("data/animated.gif");
+        QVERIFY(!path.isEmpty());
+        const auto colours = coloursForPath(path).result();
+        QVERIFY(!colours.isEmpty());
+        QVERIFY(colours.first() != k_firstFrameColour);
+        QVERIFY(closeTo(colours.first(), k_sourceColour));
+    }
+
+    void coloursFromVideo() {
+        const auto path = QFINDTESTDATA("data/video.mp4");
+        QVERIFY(!path.isEmpty());
+        const auto colours = coloursForPath(path).result();
+        QVERIFY(!colours.isEmpty());
+        QVERIFY(colours.first() != k_firstFrameColour);
+        QVERIFY(closeTo(colours.first(), k_sourceColour));
     }
 
     void coloursFromMissingPath() { QVERIFY(coloursForPath(m_root.filePath(u"missing.png"_s)).result().isEmpty()); }
