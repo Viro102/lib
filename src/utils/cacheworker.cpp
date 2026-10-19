@@ -25,7 +25,7 @@ using Qt::StringLiterals::operator""_s;
 namespace {
 
 qint64 now() {
-    return QDateTime::currentSecsSinceEpoch();
+    return QDateTime::currentMSecsSinceEpoch();
 }
 
 } // namespace

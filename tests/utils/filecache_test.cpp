@@ -119,11 +119,11 @@ private slots:
         FileCache cache(u"test"_s, k_maxSize, k_suffix);
         cache.store(u"a"_s, bytes(4, 'a'));
         QTRY_VERIFY(!cache.lookup(u"a"_s).result().isEmpty());
-        QTest::qSleep(1100);
+        QTest::qSleep(5);
 
         cache.store(u"b"_s, bytes(4, 'b'));
         QTRY_VERIFY(!cache.lookup(u"b"_s).result().isEmpty());
-        QTest::qSleep(1100);
+        QTest::qSleep(5);
 
         QVERIFY(!cache.lookup(u"a"_s).result().isEmpty());
         cache.store(u"c"_s, bytes(4, 'c'));
@@ -166,7 +166,7 @@ private slots:
 
         FileCache cache(u"test"_s, k_maxSize, k_suffix);
         QVERIFY(!cache.lookup(u"orphan"_s).result().isEmpty());
-        QTest::qSleep(1100);
+        QTest::qSleep(5);
 
         cache.store(u"new"_s, bytes(6, 'n'));
         QTRY_VERIFY(!cache.lookup(u"new"_s).result().isEmpty());

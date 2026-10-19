@@ -103,11 +103,11 @@ private slots:
         BlobCache cache(u"test"_s, k_maxSize);
         cache.store(u"a"_s, bytes(4, 'a'));
         QCOMPARE(cache.lookup(u"a"_s).result(), bytes(4, 'a'));
-        QTest::qSleep(1100);
+        QTest::qSleep(5);
 
         cache.store(u"b"_s, bytes(4, 'b'));
         QCOMPARE(cache.lookup(u"b"_s).result(), bytes(4, 'b'));
-        QTest::qSleep(1100);
+        QTest::qSleep(5);
 
         QCOMPARE(cache.lookup(u"a"_s).result(), bytes(4, 'a'));
         cache.store(u"c"_s, bytes(4, 'c'));
