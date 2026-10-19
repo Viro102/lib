@@ -28,7 +28,7 @@ bool queryLuaConfig() {
         response += socket.readAll();
     response += socket.readAll();
 
-    return QJsonDocument::fromJson(response).object()[u"configProvider"_s].toString() == u"lua";
+    return QJsonDocument::fromJson(response).object().value(u"configProvider"_s).toString() == u"lua";
 }
 
 bool isLuaConfig() {
@@ -38,14 +38,16 @@ bool isLuaConfig() {
 
 QString genConf(const scheme::SchemeColours& colours) {
     QString out;
-    for (const auto& [name, colour] : scheme::namedColours(colours))
+    const auto named = scheme::namedColours(colours);
+    for (const auto& [name, colour] : named)
         out += u"$%1 = %2\n"_s.arg(name, hex(colour));
     return out;
 }
 
 QString genLua(const scheme::SchemeColours& colours) {
     QString out = u"return {\n"_s;
-    for (const auto& [name, colour] : scheme::namedColours(colours))
+    const auto named = scheme::namedColours(colours);
+    for (const auto& [name, colour] : named)
         out += u"  %1 = \"%2\",\n"_s.arg(name, hex(colour));
     return out + u"}"_s;
 }

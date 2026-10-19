@@ -54,7 +54,8 @@ void Theme::applyTerminal() const {
     const auto data = seqs.toUtf8();
     static const QRegularExpression k_digits(u"^\\d+$"_s);
     const QDir pts(u"/dev/pts"_s);
-    for (const auto& name : pts.entryList(QDir::System | QDir::Files | QDir::NoDotAndDotDot)) {
+    const auto ptys = pts.entryList(QDir::System | QDir::Files | QDir::NoDotAndDotDot);
+    for (const auto& name : ptys) {
         if (k_digits.match(name).hasMatch())
             writeToPty(pts.filePath(name), data);
     }

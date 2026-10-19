@@ -66,7 +66,8 @@ QJsonObject Config::root() const {
 
 QJsonValue Config::value(QStringView path, const QJsonValue& fallback) const {
     QJsonValue current = m_root;
-    for (const auto key : path.split(u'.')) {
+    const auto keys = path.split(u'.');
+    for (const auto key : keys) {
         if (!current.isObject())
             return fallback;
         current = current.toObject().value(key);

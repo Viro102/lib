@@ -17,7 +17,8 @@ constexpr std::array k_clients = { u"Equicord", u"Vencord", u"BetterDiscord", u"
 
 QString genScss(const scheme::SchemeColours& colours) {
     QString out;
-    for (const auto& [name, colour] : scheme::namedColours(colours))
+    const auto named = scheme::namedColours(colours);
+    for (const auto& [name, colour] : named)
         out += u"$%1: #%2;\n"_s.arg(name, hex(colour));
     return out;
 }

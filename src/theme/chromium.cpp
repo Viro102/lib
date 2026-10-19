@@ -30,7 +30,7 @@ void Theme::applyChromium() const {
         return;
     }
 
-    for (const auto& browser : installed)
+    for (const auto& browser : std::as_const(installed))
         run(browser, { u"--refresh-platform-policy"_s, u"--no-startup-window"_s });
 }
 

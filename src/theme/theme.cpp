@@ -93,7 +93,8 @@ std::optional<QString> select(QStringView field, const auto& resolve) {
     if (!subject)
         return std::nullopt;
 
-    for (const auto arm : field.sliced(question + 1).split(u" | ")) {
+    const auto arms = field.sliced(question + 1).split(u" | ");
+    for (const auto arm : arms) {
         const auto branch = arm.trimmed();
         const auto equals = branch.indexOf(u'=');
         if (equals < 0)
@@ -177,7 +178,8 @@ QString Theme::render(const QString& templatePath) const {
     const auto content = QString::fromUtf8(file.readAll());
 
     QHash<QStringView, m3colours::Argb> colours;
-    for (const auto& [name, colour] : scheme::namedColours(m_scheme.colours))
+    const auto named = scheme::namedColours(m_scheme.colours);
+    for (const auto& [name, colour] : named)
         colours.insert(name, colour);
 
     const QHash<QStringView, QString> variables = {
@@ -281,7 +283,8 @@ void Theme::applyCustom() const {
         return;
     }
 
-    for (const auto& entry : doc.array()) {
+    const auto entries = doc.array();
+    for (const auto& entry : entries) {
         const auto obj = entry.toObject();
         const auto from = obj[u"from"_s].toString();
         const auto to = obj[u"to"_s].toString();
@@ -303,7 +306,8 @@ void Theme::applyCustom() const {
 
 void Theme::runPostHook(const QString& hook) const {
     QJsonObject colours;
-    for (const auto& [name, colour] : scheme::namedColours(m_scheme.colours))
+    const auto named = scheme::namedColours(m_scheme.colours);
+    for (const auto& [name, colour] : named)
         colours[name.toString()] = hex(colour);
 
     auto env = QProcessEnvironment::systemEnvironment();
