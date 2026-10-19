@@ -31,6 +31,7 @@ Q_LOGGING_CATEGORY(lcScheme, "caelestia.scheme", QtInfoMsg)
 
 constexpr int k_maxSize = 1024 * 1024;
 constexpr int k_cacheVersion = 1;
+constexpr m3colours::Argb k_fallbackColour{ 0xFF4285F4 };
 
 QString toString(m3colours::scheme::Variant flavour) {
     switch (flavour) {
@@ -73,6 +74,12 @@ std::optional<SchemeColours> coloursFromBytes(const QByteArray& bytes) {
 
 QByteArray coloursToBytes(const SchemeColours& colours) {
     return { reinterpret_cast<const char*>(&colours), sizeof(colours) };
+}
+
+m3colours::Argb sourceColour(const QList<m3colours::Argb>& colours) {
+    if (colours.isEmpty())
+        qCWarning(lcScheme) << "No usable colours, falling back to" << Qt::hex << k_fallbackColour.value();
+    return colours.value(0, k_fallbackColour);
 }
 
 QHash<QString, m3colours::Argb> parseColours(QIODevice& device) {
@@ -145,13 +152,13 @@ Scheme schemeForImage(const QImage& image, m3colours::scheme::Variant flavour, S
         .name = u"dynamic"_s,
         .flavour = toString(flavour),
         .mode = mode,
-        .colours = gen::genScheme(colours[0], flavour, mode),
+        .colours = gen::genScheme(sourceColour(colours), flavour, mode),
     };
 }
 
 QFuture<Scheme> schemeForPath(const QString& path, m3colours::scheme::Variant flavour, Scheme::Mode mode) {
     return coloursForPath(path).then([path, flavour, mode](const QList<m3colours::Argb>& colours) -> Scheme {
-        const auto best = colours[0];
+        const auto best = sourceColour(colours);
         auto future = SchemeCache::instance().lookup(SchemeCache::keyFor(best, flavour, mode));
         future.waitForFinished();
 
