@@ -22,6 +22,11 @@ using Qt::StringLiterals::operator""_s;
 
 namespace {
 
+constexpr auto k_fixture = R"({"theme":{"targets":{
+    "terminal":false,"discord":false,"btop":false,"htop":false,"gtk":false,"qt":false,
+    "chromium":false,"cava":false
+}}})";
+
 qsizetype countFiles(const QString& root) {
     qsizetype count = 0;
     for (QDirIterator it(root, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories); it.hasNext();
@@ -53,15 +58,16 @@ private slots:
         qputenv("XDG_STATE_HOME", m_root.filePath(u"state"_s).toUtf8());
         qunsetenv("HYPRLAND_INSTANCE_SIGNATURE");
 
-        writeFile(config::Config::configPath(), R"({"theme":{"targets":{
-            "terminal":false,"discord":false,"btop":false,"htop":false,"gtk":false,"qt":false,
-            "chromium":false,"cava":false
-        }}})");
-
         m_colours.primary = m3colours::Argb{ 0xFF2962FF };
         m_colours.surface = m3colours::Argb{ 0xFF101418 };
         m_colours.onSurface = m3colours::Argb{ 0xFFE0E3E8 };
         m_colours.term1 = m3colours::Argb{ 0x80FF0000 };
+    }
+
+    void init() {
+        writeFile(config::Config::configPath(), k_fixture);
+        config::Config::instance().reload();
+        QFile::remove(config::ConfigPaths::customThemesDir() + u"/templates.json"_s);
     }
 
     void rendersColourForms() {
@@ -229,12 +235,10 @@ private slots:
     void postHookReceivesFlavour() {
         auto& config = config::Config::instance();
         const auto out = m_root.filePath(u"hook-flavour.txt"_s);
-        QVERIFY(config.setValue(u"theme.targets.discord", false));
         QVERIFY(config.setValue(u"theme.postHook", u"echo \"$SCHEME_FLAVOUR\" > "_s + out));
 
         theme::Theme(scheme()).apply().waitForFinished();
 
-        QVERIFY(config.setValue(u"theme.postHook", u""_s));
         QCOMPARE(readFile(out).trimmed(), u"default"_s);
     }
 

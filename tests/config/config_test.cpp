@@ -12,6 +12,12 @@
 using namespace caelestia::config;
 using Qt::StringLiterals::operator""_s;
 
+namespace {
+
+constexpr auto k_fixture = R"({"bar":{"height":32,"shown":true},"name":"caelestia"})";
+
+} // namespace
+
 class TestConfig : public QObject {
     Q_OBJECT
 
@@ -25,7 +31,11 @@ private slots:
         qputenv("XDG_CONFIG_HOME", m_root.path().toUtf8());
         QCOMPARE(Config::configDir(), m_root.path() + u"/caelestia"_s);
         QCOMPARE(Config::configPath(), m_root.path() + u"/caelestia/config.json"_s);
-        writeFile(Config::configPath(), R"({"bar":{"height":32,"shown":true},"name":"caelestia"})");
+    }
+
+    void init() {
+        writeFile(Config::configPath(), k_fixture);
+        Config::instance().reload();
     }
 
     void loadsOnCreation() {
@@ -51,16 +61,15 @@ private slots:
     }
 
     void nullIsNotFallback() {
-        const auto& config = Config::instance();
+        auto& config = Config::instance();
+        writeFile(Config::configPath(), R"({"nil":null})");
+        config.reload();
         QVERIFY(config.value(u"nil").isNull());
         QVERIFY(config.value(u"nil", 7).isNull());
     }
 
     void fallbackForMissing() {
-        auto& config = Config::instance();
-        writeFile(Config::configPath(), R"({"bar":{"height":32,"shown":true},"name":"caelestia"})");
-        config.reload();
-
+        const auto& config = Config::instance();
         QVERIFY(config.value(u"missing").isUndefined());
         QCOMPARE(config.value(u"missing", 7).toInt(), 7);
         QCOMPARE(config.value(u"name.nested", 7).toInt(), 7);
@@ -84,7 +93,7 @@ private slots:
         QVERIFY(config.setValue(u"new.deep.key", u"x"_s));
         QCOMPARE(config.value(u"bar.height").toInt(), 48);
         QCOMPARE(config.value(u"new.deep.key").toString(), u"x"_s);
-        QCOMPARE(config.value(u"name").toString(), u"changed"_s);
+        QCOMPARE(config.value(u"name").toString(), u"caelestia"_s);
 
         const auto written = readJson(Config::configPath());
         QCOMPARE(written, config.root());
@@ -94,9 +103,9 @@ private slots:
     void setValuePreservesSiblings() {
         auto& config = Config::instance();
         QVERIFY(config.setValue(u"bar.width", 100));
-        QCOMPARE(config.value(u"bar.height").toInt(), 48);
+        QCOMPARE(config.value(u"bar.height").toInt(), 32);
         QCOMPARE(config.value(u"bar.width").toInt(), 100);
-        QCOMPARE(config.value(u"new.deep.key").toString(), u"x"_s);
+        QCOMPARE(config.value(u"name").toString(), u"caelestia"_s);
     }
 
     void setValueReplacesScalarWithObject() {
@@ -142,6 +151,7 @@ private slots:
     }
 
     void setValueWritesIndentedJson() {
+        QVERIFY(Config::instance().setValue(u"bar.height", 48));
         QFile file(Config::configPath());
         QVERIFY(file.open(QIODevice::ReadOnly));
         const auto text = file.readAll();
@@ -158,10 +168,6 @@ private slots:
 
     void reloadDropsInvalidFile() {
         auto& config = Config::instance();
-        writeFile(Config::configPath(), R"({"name":"valid"})");
-        config.reload();
-        QCOMPARE(config.value(u"name").toString(), u"valid"_s);
-
         writeFile(Config::configPath(), "not json");
         config.reload();
         QVERIFY(config.root().isEmpty());
@@ -199,8 +205,6 @@ private slots:
 
     void setValueWritesEmptyMiddleKey() {
         auto& config = Config::instance();
-        writeFile(Config::configPath(), "{}");
-        config.reload();
         QVERIFY(config.setValue(u"a..b", 1));
         QVERIFY(config.root()[u"a"_s].toObject().contains(u""_s));
         QCOMPARE(config.value(u"a..b").toInt(), 1);
