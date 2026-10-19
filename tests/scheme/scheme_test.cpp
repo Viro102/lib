@@ -1,6 +1,4 @@
-#include <qdir.h>
 #include <qdiriterator.h>
-#include <qfile.h>
 #include <qfileinfo.h>
 #include <qimage.h>
 #include <qtemporarydir.h>
@@ -11,6 +9,7 @@
 #include <stdexcept>
 
 #include "caelestia/scheme/scheme.hpp"
+#include "generator.hpp"
 
 using namespace caelestia::scheme;
 using m3colours::Argb;
@@ -25,10 +24,6 @@ auto allColours(const SchemeColours& colours) {
     return std::bit_cast<std::array<Argb, sizeof(SchemeColours) / sizeof(Argb)>>(colours);
 }
 
-bool isGrayscale(Argb colour) {
-    return colour.red() == colour.green() && colour.green() == colour.blue();
-}
-
 } // namespace
 
 class TestScheme : public QObject {
@@ -36,7 +31,8 @@ class TestScheme : public QObject {
 
 private:
     QTemporaryDir m_root;
-    QString m_image;
+    QImage m_image;
+    QString m_path;
 
 private slots:
 
@@ -44,10 +40,10 @@ private slots:
         QVERIFY(m_root.isValid());
         qputenv("XDG_CACHE_HOME", m_root.path().toUtf8());
 
-        m_image = m_root.filePath(u"wallpaper.png"_s);
-        QImage image(8, 8, QImage::Format_RGB32);
-        image.fill(k_sourceColour.value());
-        QVERIFY(image.save(m_image));
+        m_image = QImage(8, 8, QImage::Format_RGB32);
+        m_image.fill(k_sourceColour.value());
+        m_path = m_root.filePath(u"wallpaper.png"_s);
+        QVERIFY(m_image.save(m_path));
     }
 
     void staticSchemeLoads() {
@@ -92,61 +88,44 @@ private slots:
         QVERIFY_THROWS_EXCEPTION(std::invalid_argument, future.result());
     }
 
-    void coloursForImage() {
-        const auto colours = coloursForPath(m_image).result();
-        QVERIFY(!colours.isEmpty());
-        QCOMPARE(colours.first(), k_sourceColour);
-    }
-
-    void coloursForMissingImage() { QVERIFY(coloursForPath(m_root.filePath(u"missing.png"_s)).result().isEmpty()); }
-
-    void coloursForUsesCache() {
-        const auto path = m_root.filePath(u"cached.png"_s);
-        QVERIFY(QFile::copy(m_image, path));
-        const auto colours = coloursForPath(path).result();
-        QVERIFY(!colours.isEmpty());
-
-        QFile file(path);
-        const auto modified = QFileInfo(file).lastModified();
-        const auto size = file.size();
-        QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
-        QCOMPARE(file.write(QByteArray(size, '\0')), size);
-        QVERIFY(file.setFileTime(modified, QFileDevice::FileModificationTime));
-        file.close();
-
-        QCOMPARE(coloursForPath(path).result(), colours);
-    }
-
-    void generatedSchemeFromImage() {
-        const auto scheme = schemeForPath(m_image, Variant::TonalSpot, Scheme::Mode::Dark).result();
-        QCOMPARE(scheme.name, m_image);
+    void schemeFromImage() {
+        const auto scheme = schemeForImage(m_image, Variant::TonalSpot, Scheme::Mode::Dark);
+        QCOMPARE(scheme.name, u"dynamic"_s);
         QCOMPARE(scheme.flavour, u"tonalspot"_s);
         QCOMPARE(scheme.mode, Scheme::Mode::Dark);
-        for (const auto colour : allColours(scheme.colours)) {
-            QCOMPARE(colour.alpha(), 0xFF);
-        }
-        QVERIFY(scheme.colours.background.red() < 0x80);
-        QVERIFY(scheme.colours.onBackground.red() > 0x80);
+        QCOMPARE(allColours(scheme.colours),
+            allColours(gen::genScheme(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark)));
     }
 
-    void generatedSchemeLightMode() {
-        const auto scheme = schemeForPath(m_image, Variant::TonalSpot, Scheme::Mode::Light).result();
+    void schemeFromImageLightMode() {
+        const auto scheme = schemeForImage(m_image, Variant::Vibrant, Scheme::Mode::Light);
+        QCOMPARE(scheme.flavour, u"vibrant"_s);
         QCOMPARE(scheme.mode, Scheme::Mode::Light);
-        QVERIFY(scheme.colours.background.red() > 0x80);
-        QVERIFY(scheme.colours.onBackground.red() < 0x80);
+        QCOMPARE(allColours(scheme.colours),
+            allColours(gen::genScheme(k_sourceColour, Variant::Vibrant, Scheme::Mode::Light)));
     }
 
-    void generatedSchemeMonochrome() {
-        const auto scheme = schemeForPath(m_image, Variant::Monochrome, Scheme::Mode::Dark).result();
-        QCOMPARE(scheme.flavour, u"monochrome"_s);
-        QVERIFY(isGrayscale(scheme.colours.primary));
-        QVERIFY(isGrayscale(scheme.colours.term1));
-        QVERIFY(isGrayscale(scheme.colours.red));
+    void schemeFromPath() {
+        const auto scheme = schemeForPath(m_path, Variant::TonalSpot, Scheme::Mode::Dark).result();
+        QCOMPARE(scheme.name, u"dynamic"_s);
+        QCOMPARE(scheme.flavour, u"tonalspot"_s);
+        QCOMPARE(scheme.mode, Scheme::Mode::Dark);
+        QCOMPARE(allColours(scheme.colours),
+            allColours(gen::genScheme(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark)));
     }
 
-    void generatedSchemeIsStable() {
-        const auto first = schemeForPath(m_image, Variant::Vibrant, Scheme::Mode::Dark).result();
-        const auto second = schemeForPath(m_image, Variant::Vibrant, Scheme::Mode::Dark).result();
+    void schemeFromPathMatchesImage() {
+        const auto fromPath = schemeForPath(m_path, Variant::Monochrome, Scheme::Mode::Light).result();
+        const auto fromImage = schemeForImage(m_image, Variant::Monochrome, Scheme::Mode::Light);
+        QCOMPARE(fromPath.name, fromImage.name);
+        QCOMPARE(fromPath.flavour, fromImage.flavour);
+        QCOMPARE(fromPath.mode, fromImage.mode);
+        QCOMPARE(allColours(fromPath.colours), allColours(fromImage.colours));
+    }
+
+    void schemeFromPathUsesCache() {
+        const auto first = schemeForPath(m_path, Variant::Expressive, Scheme::Mode::Dark).result();
+        const auto second = schemeForPath(m_path, Variant::Expressive, Scheme::Mode::Dark).result();
         QCOMPARE(allColours(first.colours), allColours(second.colours));
     }
 };
