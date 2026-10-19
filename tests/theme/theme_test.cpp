@@ -1,8 +1,10 @@
 #include <qcolor.h>
+#include <qdatastream.h>
 #include <qdir.h>
 #include <qdiriterator.h>
 #include <qfile.h>
 #include <qfileinfo.h>
+#include <qlockfile.h>
 #include <qstandardpaths.h>
 #include <qtemporarydir.h>
 #include <qtest.h>
@@ -247,6 +249,58 @@ private slots:
 
         QVERIFY(config.setValue(u"theme.postHook", u""_s));
         QCOMPARE(readFile(out).trimmed(), u"default"_s);
+    }
+
+    void stateRoundTrips() {
+        QVERIFY(theme::Theme::saveState(scheme(scheme::Scheme::Mode::Light)));
+
+        const auto loaded = theme::Theme::loadState();
+        QVERIFY(loaded.has_value());
+        QCOMPARE(loaded->name, u"test"_s);
+        QCOMPARE(loaded->flavour, u"default"_s);
+        QCOMPARE(loaded->mode, scheme::Scheme::Mode::Light);
+        QCOMPARE(scheme::coloursToBytes(loaded->colours), scheme::coloursToBytes(m_colours));
+    }
+
+    void invalidStateIsRejected() {
+        const auto path = config::ConfigPaths::stateDir() + u"/scheme.bin"_s;
+
+        QFile::remove(path);
+        QVERIFY(!theme::Theme::loadState().has_value());
+
+        writeFile(path, "garbage");
+        QVERIFY(!theme::Theme::loadState().has_value());
+
+        QByteArray truncated;
+        QDataStream out(&truncated, QIODevice::WriteOnly);
+        out << u"test"_s << u"default"_s << scheme::Scheme::Mode::Dark << QByteArray("abcd");
+        writeFile(path, truncated);
+        QVERIFY(!theme::Theme::loadState().has_value());
+    }
+
+    void appliesNewestStateOnceLockIsReleased() {
+        const auto stateDir = config::ConfigPaths::stateDir();
+        const auto statePath = stateDir + u"/scheme.bin"_s;
+        QVERIFY(QDir().mkpath(stateDir));
+        QFile::remove(statePath);
+
+        QLockFile lock(stateDir + u"/theme.lock"_s);
+        QVERIFY(lock.tryLock(0));
+
+        auto pending = theme::Theme(scheme()).apply();
+        QTRY_VERIFY(QFileInfo::exists(statePath));
+
+        auto newer = m_colours;
+        newer.primary = m3colours::Argb{ 0xFF00FF00 };
+        QVERIFY(theme::Theme::saveState(
+            { .name = u"newer"_s, .flavour = u"default"_s, .mode = scheme::Scheme::Mode::Dark, .colours = newer }));
+
+        lock.unlock();
+        pending.waitForFinished();
+
+        const auto hypr = readFile(m_root.filePath(u"config/hypr/scheme/current.conf"_s));
+        QVERIFY(hypr.contains(u"$primary = 00ff00\n"));
+        QVERIFY(!hypr.contains(u"2962ff"));
     }
 };
 

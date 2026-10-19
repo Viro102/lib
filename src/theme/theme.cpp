@@ -115,7 +115,13 @@ QString schemeStatePath() {
     return config::ConfigPaths::stateDir() + u"/scheme.bin"_s;
 }
 
-bool saveSchemeState(const scheme::Scheme& scheme) {
+} // namespace
+
+Theme::Theme(scheme::Scheme scheme)
+    : m_scheme(std::move(scheme))
+    , m_iconTheme(defaultIconTheme(m_scheme.mode)) {}
+
+bool Theme::saveState(const scheme::Scheme& scheme) {
     QSaveFile file(schemeStatePath());
     if (!file.open(QIODevice::WriteOnly)) {
         qCWarning(lcTheme) << "Unable to open" << file.fileName() << file.errorString();
@@ -131,7 +137,7 @@ bool saveSchemeState(const scheme::Scheme& scheme) {
     return true;
 }
 
-std::optional<scheme::Scheme> loadSchemeState() {
+std::optional<scheme::Scheme> Theme::loadState() {
     QFile file(schemeStatePath());
     if (!file.open(QIODevice::ReadOnly)) {
         qCWarning(lcTheme) << "Unable to open" << file.fileName() << file.errorString();
@@ -154,12 +160,6 @@ std::optional<scheme::Scheme> loadSchemeState() {
         return std::nullopt;
     return scheme::Scheme{ .name = name, .flavour = flavour, .mode = mode, .colours = *parsed };
 }
-
-} // namespace
-
-Theme::Theme(scheme::Scheme scheme)
-    : m_scheme(std::move(scheme))
-    , m_iconTheme(defaultIconTheme(m_scheme.mode)) {}
 
 QFuture<void> Theme::apply() const {
     return QtFuture::makeReadyVoidFuture().then(QtFuture::Launch::Async, [theme = *this] {
@@ -215,13 +215,13 @@ void Theme::writeTemplate(const QString& name, const QString& path) const {
 
 void Theme::applySync() const {
     QDir().mkpath(config::ConfigPaths::stateDir());
-    const bool saved = saveSchemeState(m_scheme);
+    const bool saved = saveState(m_scheme);
 
     QLockFile lock(config::ConfigPaths::stateDir() + u"/theme.lock"_s);
     lock.lock();
 
     if (saved) {
-        if (auto latest = loadSchemeState()) {
+        if (auto latest = loadState()) {
             Theme(std::move(*latest)).applyTargets();
             return;
         }

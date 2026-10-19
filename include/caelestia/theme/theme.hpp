@@ -3,6 +3,8 @@
 #include <qfuture.h>
 #include <qstring.h>
 
+#include <optional>
+
 #include "caelestia/scheme/scheme.hpp"
 
 class TestTheme;
@@ -25,6 +27,9 @@ private:
     [[nodiscard]] QString render(const QString& templatePath) const;
     [[nodiscard]] QString renderTemplate(const QString& name) const;
     void writeTemplate(const QString& name, const QString& path) const;
+
+    [[nodiscard]] static bool saveState(const scheme::Scheme& scheme);
+    [[nodiscard]] static std::optional<scheme::Scheme> loadState();
 
     void applySync() const;
     void applyTargets() const;
