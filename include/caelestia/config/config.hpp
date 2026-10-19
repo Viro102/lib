@@ -5,6 +5,7 @@
 #include <qstring.h>
 #include <qtclasshelpermacros.h>
 
+#include "caelestia/config/apps.hpp"
 #include "caelestia/config/paths.hpp"
 
 namespace caelestia::config {
@@ -25,6 +26,7 @@ public:
     bool setValue(QStringView path, const QJsonValue& value);
 
     // Config options
+    [[nodiscard]] ConfigApps apps() const;
     [[nodiscard]] ConfigPaths paths() const;
 
 private:
@@ -34,6 +36,7 @@ private:
 
     QJsonObject m_root;
 
+    ConfigApps const m_apps;
     ConfigPaths const m_paths;
 };
 

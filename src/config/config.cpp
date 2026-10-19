@@ -42,7 +42,8 @@ QString Config::configPath() {
 }
 
 Config::Config()
-    : m_paths(this) {
+    : m_apps(this)
+    , m_paths(this) {
     reload();
 }
 
