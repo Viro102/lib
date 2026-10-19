@@ -245,13 +245,13 @@ QFuture<Scheme> schemeForPath(const QString& path, m3colours::scheme::Variant fl
         const auto res = future.result();
         if (!res.isEmpty()) {
             if (const auto cached = coloursFromBytes(res))
-                return { .name = path, .flavour = toString(flavour), .mode = mode, .colours = *cached };
+                return { .name = u"dynamic"_s, .flavour = toString(flavour), .mode = mode, .colours = *cached };
         }
 
         const auto gen = gen::genScheme(best, flavour, mode);
         cache.store(SchemeCache::keyFor(best, flavour, mode), coloursToBytes(gen));
 
-        return { .name = path, .flavour = toString(flavour), .mode = mode, .colours = gen };
+        return { .name = u"dynamic"_s, .flavour = toString(flavour), .mode = mode, .colours = gen };
     });
 }
 
