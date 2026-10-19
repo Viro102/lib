@@ -227,15 +227,14 @@ private slots:
         QCOMPARE(readFile(home + u"/custom/tilde.conf"_s), u"101418"_s);
     }
 
-    void customTemplateMissingSourceWritesEmptyFile() {
+    void customTemplateMissingSourceIsSkipped() {
         const auto out = m_root.filePath(u"missing-source/out.conf"_s);
         writeFile(config::ConfigPaths::customThemesDir() + u"/templates.json"_s,
             u"[{\"from\":\"does-not-exist.tpl\",\"to\":\"%1\"}]"_s.arg(out).toUtf8());
 
         theme::Theme(scheme()).applyCustom();
 
-        QVERIFY(QFileInfo(out).isFile());
-        QCOMPARE(QFileInfo(out).size(), 0);
+        QVERIFY(!QFileInfo::exists(out));
     }
 
     void postHookReceivesFlavour() {

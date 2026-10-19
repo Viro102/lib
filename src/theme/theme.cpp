@@ -4,6 +4,7 @@
 #include <qdatastream.h>
 #include <qdir.h>
 #include <qfile.h>
+#include <qfileinfo.h>
 #include <qhash.h>
 #include <qjsonarray.h>
 #include <qjsondocument.h>
@@ -289,8 +290,13 @@ void Theme::applyCustom() const {
             continue;
         }
 
-        writeFile(config::ConfigPaths::resolvePath(to, QDir::homePath()),
-            render(config::ConfigPaths::resolvePath(from, dir)));
+        const auto source = config::ConfigPaths::resolvePath(from, dir);
+        if (!QFileInfo::exists(source)) {
+            qCWarning(lcTheme) << "Template" << source << "does not exist, skipping";
+            continue;
+        }
+
+        writeFile(config::ConfigPaths::resolvePath(to, QDir::homePath()), render(source));
     }
 }
 
