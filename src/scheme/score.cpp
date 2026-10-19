@@ -38,21 +38,6 @@ QByteArray coloursToBytes(const QList<m3colours::Argb>& colours) {
     return data.left(data.size() - 1);
 }
 
-QList<m3colours::Argb> scoreImage(const QString& path) {
-    QImageReader reader(path);
-    if (!reader.canRead())
-        return {};
-
-    const auto image = reader.read().convertToFormat(QImage::Format_ARGB32);
-    static_assert(sizeof(m3colours::Argb) == sizeof(QRgb) && std::is_standard_layout_v<m3colours::Argb>);
-    const std::span pixels(reinterpret_cast<const m3colours::Argb*>(image.constBits()),
-        static_cast<std::size_t>(image.sizeInBytes()) / sizeof(QRgb));
-
-    const auto quant = m3colours::quantise::celebi(pixels, k_maxColours);
-    const auto scored = m3colours::score::scoreByCutoff(quant.colourToCount);
-    return { scored.begin(), scored.end() };
-}
-
 } // namespace
 
 ScoreCache::ScoreCache()
@@ -63,14 +48,29 @@ ScoreCache& ScoreCache::instance() {
     return s_instance;
 }
 
-QFuture<QList<m3colours::Argb>> coloursFor(const QString& path) {
+QList<m3colours::Argb> coloursForImage(const QImage& image) {
+    const auto formatted = image.convertToFormat(QImage::Format_ARGB32);
+    static_assert(sizeof(m3colours::Argb) == sizeof(QRgb) && std::is_standard_layout_v<m3colours::Argb>);
+    const std::span pixels(reinterpret_cast<const m3colours::Argb*>(formatted.constBits()),
+        static_cast<std::size_t>(formatted.sizeInBytes()) / sizeof(QRgb));
+
+    const auto quant = m3colours::quantise::celebi(pixels, k_maxColours);
+    const auto scored = m3colours::score::scoreByCutoff(quant.colourToCount);
+    return { scored.begin(), scored.end() };
+}
+
+QFuture<QList<m3colours::Argb>> coloursForPath(const QString& path) {
     return ScoreCache::instance()
         .lookup(ScoreCache::keyForPath(path))
         .then(QtFuture::Launch::Async, [path](const QByteArray& data) -> QList<m3colours::Argb> {
             if (!data.isEmpty())
                 return bytesToColours(data);
 
-            const auto colours = scoreImage(path);
+            QImageReader reader(path);
+            if (!reader.canRead())
+                return {};
+
+            const auto colours = coloursForImage(reader.read());
             if (!colours.isEmpty())
                 ScoreCache::instance().store(ScoreCache::keyForPath(path), coloursToBytes(colours));
             return colours;

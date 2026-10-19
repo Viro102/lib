@@ -67,6 +67,7 @@ target_include_directories(caelestia PUBLIC
 target_link_libraries(caelestia
     PUBLIC
         Qt::Core
+        Qt::Gui
     PRIVATE
         caelestia-config
         caelestia-scheme

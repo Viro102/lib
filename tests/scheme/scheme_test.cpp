@@ -93,17 +93,17 @@ private slots:
     }
 
     void coloursForImage() {
-        const auto colours = coloursFor(m_image).result();
+        const auto colours = coloursForPath(m_image).result();
         QVERIFY(!colours.isEmpty());
         QCOMPARE(colours.first(), k_sourceColour);
     }
 
-    void coloursForMissingImage() { QVERIFY(coloursFor(m_root.filePath(u"missing.png"_s)).result().isEmpty()); }
+    void coloursForMissingImage() { QVERIFY(coloursForPath(m_root.filePath(u"missing.png"_s)).result().isEmpty()); }
 
     void coloursForUsesCache() {
         const auto path = m_root.filePath(u"cached.png"_s);
         QVERIFY(QFile::copy(m_image, path));
-        const auto colours = coloursFor(path).result();
+        const auto colours = coloursForPath(path).result();
         QVERIFY(!colours.isEmpty());
 
         QFile file(path);
@@ -114,7 +114,7 @@ private slots:
         QVERIFY(file.setFileTime(modified, QFileDevice::FileModificationTime));
         file.close();
 
-        QCOMPARE(coloursFor(path).result(), colours);
+        QCOMPARE(coloursForPath(path).result(), colours);
     }
 
     void generatedSchemeFromImage() {

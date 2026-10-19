@@ -235,11 +235,20 @@ QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Schem
     });
 }
 
+Scheme schemeForImage(const QImage& image, m3colours::scheme::Variant flavour, Scheme::Mode mode) {
+    const auto colours = coloursForImage(image);
+    return {
+        .name = u"dynamic"_s,
+        .flavour = toString(flavour),
+        .mode = mode,
+        .colours = gen::genScheme(colours[0], flavour, mode),
+    };
+}
+
 QFuture<Scheme> schemeForPath(const QString& path, m3colours::scheme::Variant flavour, Scheme::Mode mode) {
-    auto& cache = SchemeCache::instance();
-    return coloursFor(path).then([&cache, path, flavour, mode](const QList<m3colours::Argb>& colours) -> Scheme {
+    return coloursForPath(path).then([path, flavour, mode](const QList<m3colours::Argb>& colours) -> Scheme {
         const auto best = colours[0];
-        auto future = cache.lookup(SchemeCache::keyFor(best, flavour, mode));
+        auto future = SchemeCache::instance().lookup(SchemeCache::keyFor(best, flavour, mode));
         future.waitForFinished();
 
         const auto res = future.result();
@@ -249,7 +258,7 @@ QFuture<Scheme> schemeForPath(const QString& path, m3colours::scheme::Variant fl
         }
 
         const auto gen = gen::genScheme(best, flavour, mode);
-        cache.store(SchemeCache::keyFor(best, flavour, mode), coloursToBytes(gen));
+        SchemeCache::instance().store(SchemeCache::keyFor(best, flavour, mode), coloursToBytes(gen));
 
         return { .name = u"dynamic"_s, .flavour = toString(flavour), .mode = mode, .colours = gen };
     });

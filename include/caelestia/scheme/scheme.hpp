@@ -1,6 +1,7 @@
 #pragma once
 
 #include <qfuture.h>
+#include <qimage.h>
 #include <qstring.h>
 
 #include <m3colours/scheme.hpp>
@@ -127,7 +128,9 @@ struct Scheme {
 };
 
 QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Scheme::Mode mode);
+Scheme schemeForImage(const QImage& image, m3colours::scheme::Variant flavour, Scheme::Mode mode);
 QFuture<Scheme> schemeForPath(const QString& path, m3colours::scheme::Variant flavour, Scheme::Mode mode);
-QFuture<QList<m3colours::Argb>> coloursFor(const QString& path);
+QList<m3colours::Argb> coloursForImage(const QImage& image);
+QFuture<QList<m3colours::Argb>> coloursForPath(const QString& path);
 
 } // namespace caelestia::scheme
