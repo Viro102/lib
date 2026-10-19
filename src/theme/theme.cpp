@@ -122,6 +122,7 @@ Theme::Theme(scheme::Scheme scheme)
     , m_iconTheme(defaultIconTheme(m_scheme.mode)) {}
 
 bool Theme::saveState(const scheme::Scheme& scheme) {
+    QDir().mkpath(config::ConfigPaths::stateDir());
     QSaveFile file(schemeStatePath());
     if (!file.open(QIODevice::WriteOnly)) {
         qCWarning(lcTheme) << "Unable to open" << file.fileName() << file.errorString();
