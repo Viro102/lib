@@ -99,23 +99,23 @@ m3colours::scheme::DynamicScheme schemeForVariant(Variant variant, Argb sourceCo
 
     switch (variant) {
     case Variant::Monochrome:
-        return SchemeMonochrome(hct, isDark, 0.0);
+        return SchemeMonochrome(hct, isDark, 0.0, SpecVersion::Spec2025);
     case Variant::Neutral:
-        return SchemeNeutral(hct, isDark, 0.0);
+        return SchemeNeutral(hct, isDark, 0.0, SpecVersion::Spec2025);
     case Variant::TonalSpot:
-        return SchemeTonalSpot(hct, isDark, 0.0);
+        return SchemeTonalSpot(hct, isDark, 0.0, SpecVersion::Spec2025);
     case Variant::Vibrant:
-        return SchemeVibrant(hct, isDark, 0.0);
+        return SchemeVibrant(hct, isDark, 0.0, SpecVersion::Spec2025);
     case Variant::Expressive:
-        return SchemeExpressive(hct, isDark, 0.0);
+        return SchemeExpressive(hct, isDark, 0.0, SpecVersion::Spec2025);
     case Variant::Fidelity:
-        return SchemeFidelity(hct, isDark, 0.0);
+        return SchemeFidelity(hct, isDark, 0.0, SpecVersion::Spec2025);
     case Variant::Content:
-        return SchemeContent(hct, isDark, 0.0);
+        return SchemeContent(hct, isDark, 0.0, SpecVersion::Spec2025);
     case Variant::Rainbow:
-        return SchemeRainbow(hct, isDark, 0.0);
+        return SchemeRainbow(hct, isDark, 0.0, SpecVersion::Spec2025);
     case Variant::FruitSalad:
-        return SchemeFruitSalad(hct, isDark, 0.0);
+        return SchemeFruitSalad(hct, isDark, 0.0, SpecVersion::Spec2025);
     case Variant::Cmf:
         return SchemeCmf(hct, isDark, 0.0);
     }
