@@ -27,8 +27,8 @@ public:
     bool setValue(QStringView path, const QJsonValue& value);
 
     // Config options
-    [[nodiscard]] ConfigApps apps() const;
-    [[nodiscard]] ConfigPaths paths() const;
+    [[nodiscard]] const ConfigApps& apps() const;
+    [[nodiscard]] const ConfigPaths& paths() const;
     [[nodiscard]] const ConfigTheme& theme() const;
 
 private:

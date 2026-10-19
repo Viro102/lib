@@ -19,7 +19,7 @@ QString ConfigApps::terminal() const {
     return val.isEmpty() ? defaultTerminal() : val;
 }
 
-void ConfigApps::setTerminal(const QString& dir) {
+void ConfigApps::setTerminal(const QString& dir) const {
     m_config->setValue(u"apps.terminal"_s, dir);
 }
 
@@ -32,7 +32,7 @@ QString ConfigApps::browser() const {
     return val.isEmpty() ? defaultBrowser() : val;
 }
 
-void ConfigApps::setBrowser(const QString& browser) {
+void ConfigApps::setBrowser(const QString& browser) const {
     m_config->setValue(u"apps.browser"_s, browser);
 }
 
@@ -45,7 +45,7 @@ QString ConfigApps::editor() const {
     return val.isEmpty() ? defaultEditor() : val;
 }
 
-void ConfigApps::setEditor(const QString& editor) {
+void ConfigApps::setEditor(const QString& editor) const {
     m_config->setValue(u"apps.editor"_s, editor);
 }
 
@@ -58,7 +58,7 @@ QString ConfigApps::fileExplorer() const {
     return val.isEmpty() ? defaultFileExplorer() : val;
 }
 
-void ConfigApps::setFileExplorer(const QString& fileExplorer) {
+void ConfigApps::setFileExplorer(const QString& fileExplorer) const {
     m_config->setValue(u"apps.fileExplorer"_s, fileExplorer);
 }
 
@@ -71,7 +71,7 @@ QString ConfigApps::audioSettings() const {
     return val.isEmpty() ? defaultAudioSettings() : val;
 }
 
-void ConfigApps::setAudioSettings(const QString& audioSettings) {
+void ConfigApps::setAudioSettings(const QString& audioSettings) const {
     m_config->setValue(u"apps.audioSettings"_s, audioSettings);
 }
 

@@ -13,19 +13,19 @@ public:
 
 
     [[nodiscard]] bool targetEnabled(QStringView target) const;
-    void setTargetEnabled(QStringView target, bool enabled);
+    void setTargetEnabled(QStringView target, bool enabled) const;
 
     [[nodiscard]] QString iconTheme() const;
-    void setIconTheme(const QString& iconTheme);
+    void setIconTheme(const QString& iconTheme) const;
 
     [[nodiscard]] QString iconThemeLight() const;
-    void setIconThemeLight(const QString& iconTheme);
+    void setIconThemeLight(const QString& iconTheme) const;
 
     [[nodiscard]] QString iconThemeDark() const;
-    void setIconThemeDark(const QString& iconTheme);
+    void setIconThemeDark(const QString& iconTheme) const;
 
     [[nodiscard]] QString postHook() const;
-    void setPostHook(const QString& hook);
+    void setPostHook(const QString& hook) const;
 
 private:
     explicit ConfigTheme(Config* config);

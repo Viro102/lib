@@ -48,6 +48,14 @@ Config::Config()
     reload();
 }
 
+const ConfigApps& Config::apps() const {
+    return m_apps;
+}
+
+const ConfigPaths& Config::paths() const {
+    return m_paths;
+}
+
 const ConfigTheme& Config::theme() const {
     return m_theme;
 }

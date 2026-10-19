@@ -13,15 +13,15 @@ public:
 
     [[nodiscard]] static QString defaultWallpapersDir();
     [[nodiscard]] QString wallpapersDir() const;
-    void setWallpapersDir(const QString& dir);
+    void setWallpapersDir(const QString& dir) const;
 
     [[nodiscard]] static QString defaultScreenshotsDir();
     [[nodiscard]] QString screenshotsDir() const;
-    void setScreenshotsDir(const QString& dir);
+    void setScreenshotsDir(const QString& dir) const;
 
     [[nodiscard]] static QString defaultRecordingsDir();
     [[nodiscard]] QString recordingsDir() const;
-    void setRecordingsDir(const QString& dir);
+    void setRecordingsDir(const QString& dir) const;
 
     [[nodiscard]] static QString stateDir();
     [[nodiscard]] static QString customSchemesDir();

@@ -20,7 +20,7 @@ QString ConfigPaths::wallpapersDir() const {
     return resolvePath(m_config->value(u"paths.wallpapersDir"_s).toString(), defaultWallpapersDir());
 }
 
-void ConfigPaths::setWallpapersDir(const QString& dir) {
+void ConfigPaths::setWallpapersDir(const QString& dir) const {
     m_config->setValue(u"paths.wallpapersDir"_s, dir);
 }
 
@@ -32,7 +32,7 @@ QString ConfigPaths::screenshotsDir() const {
     return resolvePath(m_config->value(u"paths.screenshotsDir"_s).toString(), defaultScreenshotsDir());
 }
 
-void ConfigPaths::setScreenshotsDir(const QString& dir) {
+void ConfigPaths::setScreenshotsDir(const QString& dir) const {
     m_config->setValue(u"paths.screenshotsDir"_s, dir);
 }
 
@@ -44,7 +44,7 @@ QString ConfigPaths::recordingsDir() const {
     return resolvePath(m_config->value(u"paths.recordingsDir"_s).toString(), defaultRecordingsDir());
 }
 
-void ConfigPaths::setRecordingsDir(const QString& dir) {
+void ConfigPaths::setRecordingsDir(const QString& dir) const {
     m_config->setValue(u"paths.recordingsDir"_s, dir);
 }
 
