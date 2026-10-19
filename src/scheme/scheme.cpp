@@ -17,6 +17,7 @@
 
 #include "caelestia/config/paths.hpp"
 #include "caelestia/media/analysis.hpp"
+#include "colournames.hpp"
 #include "generator.hpp"
 #include "schemecache.hpp"
 
@@ -53,16 +54,6 @@ QString toString(m3colours::scheme::Variant flavour) {
         return u"fruitsalad"_s;
     case m3colours::scheme::Variant::Cmf:
         return u"cmf"_s;
-    }
-    Q_UNREACHABLE_RETURN(QString());
-}
-
-QString toString(Scheme::Mode mode) {
-    switch (mode) {
-    case Scheme::Mode::Light:
-        return u"light"_s;
-    case Scheme::Mode::Dark:
-        return u"dark"_s;
     }
     Q_UNREACHABLE_RETURN(QString());
 }
@@ -108,7 +99,7 @@ QHash<QString, m3colours::Argb> parseColours(QIODevice& device) {
 Scheme parseScheme(const QString& path, const QString& name, const QString& flavour, Scheme::Mode mode) {
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        throw std::invalid_argument(u"No such scheme: %1-%2-%3"_s.arg(name, flavour, toString(mode)).toStdString());
+        throw std::invalid_argument(u"No such scheme: %1-%2-%3"_s.arg(name, flavour, modeName(mode)).toStdString());
 
     const auto map = parseColours(file);
     const auto colours = [&](QStringView key) {
@@ -120,109 +111,13 @@ Scheme parseScheme(const QString& path, const QString& name, const QString& flav
         return *it;
     };
 
-#define COLOUR(name) .name = colours(u## #name)
+#define COLOUR(name) .name = colours(u## #name),
 
     return {
         .name = name,
         .flavour = flavour,
         .mode = mode,
-        .colours = {
-            COLOUR(primaryPaletteKeyColour),
-            COLOUR(secondaryPaletteKeyColour),
-            COLOUR(tertiaryPaletteKeyColour),
-            COLOUR(neutralPaletteKeyColour),
-            COLOUR(neutralVariantPaletteKeyColour),
-            COLOUR(errorPaletteKeyColour),
-            COLOUR(background),
-            COLOUR(onBackground),
-            COLOUR(surface),
-            COLOUR(surfaceDim),
-            COLOUR(surfaceBright),
-            COLOUR(surfaceContainerLowest),
-            COLOUR(surfaceContainerLow),
-            COLOUR(surfaceContainer),
-            COLOUR(surfaceContainerHigh),
-            COLOUR(surfaceContainerHighest),
-            COLOUR(onSurface),
-            COLOUR(onSurfaceVariant),
-            COLOUR(outline),
-            COLOUR(outlineVariant),
-            COLOUR(inverseSurface),
-            COLOUR(inverseOnSurface),
-            COLOUR(primary),
-            COLOUR(onPrimary),
-            COLOUR(primaryContainer),
-            COLOUR(onPrimaryContainer),
-            COLOUR(primaryFixed),
-            COLOUR(primaryFixedDim),
-            COLOUR(onPrimaryFixed),
-            COLOUR(onPrimaryFixedVariant),
-            COLOUR(inversePrimary),
-            COLOUR(secondary),
-            COLOUR(onSecondary),
-            COLOUR(secondaryContainer),
-            COLOUR(onSecondaryContainer),
-            COLOUR(secondaryFixed),
-            COLOUR(secondaryFixedDim),
-            COLOUR(onSecondaryFixed),
-            COLOUR(onSecondaryFixedVariant),
-            COLOUR(tertiary),
-            COLOUR(onTertiary),
-            COLOUR(tertiaryContainer),
-            COLOUR(onTertiaryContainer),
-            COLOUR(tertiaryFixed),
-            COLOUR(tertiaryFixedDim),
-            COLOUR(onTertiaryFixed),
-            COLOUR(onTertiaryFixedVariant),
-            COLOUR(error),
-            COLOUR(onError),
-            COLOUR(errorContainer),
-            COLOUR(onErrorContainer),
-            COLOUR(success),
-            COLOUR(onSuccess),
-            COLOUR(successContainer),
-            COLOUR(onSuccessContainer),
-            COLOUR(term0),
-            COLOUR(term1),
-            COLOUR(term2),
-            COLOUR(term3),
-            COLOUR(term4),
-            COLOUR(term5),
-            COLOUR(term6),
-            COLOUR(term7),
-            COLOUR(term8),
-            COLOUR(term9),
-            COLOUR(term10),
-            COLOUR(term11),
-            COLOUR(term12),
-            COLOUR(term13),
-            COLOUR(term14),
-            COLOUR(term15),
-            COLOUR(rosewater),
-            COLOUR(flamingo),
-            COLOUR(pink),
-            COLOUR(mauve),
-            COLOUR(red),
-            COLOUR(maroon),
-            COLOUR(peach),
-            COLOUR(yellow),
-            COLOUR(green),
-            COLOUR(teal),
-            COLOUR(sky),
-            COLOUR(sapphire),
-            COLOUR(blue),
-            COLOUR(lavender),
-            COLOUR(klink),
-            COLOUR(klinkSelection),
-            COLOUR(kvisited),
-            COLOUR(kvisitedSelection),
-            COLOUR(knegative),
-            COLOUR(knegativeSelection),
-            COLOUR(kneutral),
-            COLOUR(kneutralSelection),
-            COLOUR(kpositive),
-            COLOUR(kpositiveSelection),
-        },
+        .colours = { CAELESTIA_SCHEME_COLOURS(COLOUR) },
     };
 
 #undef COLOUR
@@ -231,7 +126,7 @@ Scheme parseScheme(const QString& path, const QString& name, const QString& flav
 } // namespace
 
 QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Scheme::Mode mode) {
-    const auto path = u":/schemes/%1/%2/%3.txt"_s.arg(name, flavour, toString(mode));
+    const auto path = u":/schemes/%1/%2/%3.txt"_s.arg(name, flavour, modeName(mode));
     return QtFuture::makeReadyValueFuture(path)
         .then(QtFuture::Launch::Async,
             [name, flavour, mode](const QString& p) {
@@ -239,7 +134,7 @@ QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Schem
             })
         .onFailed([name, flavour, mode] {
             const auto customPath =
-                config::ConfigPaths::customSchemesDir() + u"/%1/%2/%3.txt"_s.arg(name, flavour, toString(mode));
+                config::ConfigPaths::customSchemesDir() + u"/%1/%2/%3.txt"_s.arg(name, flavour, modeName(mode));
             return parseScheme(customPath, name, flavour, mode);
         });
 }
@@ -283,7 +178,23 @@ SchemeCache& SchemeCache::instance() {
 
 QString SchemeCache::keyFor(m3colours::Argb sourceColour, m3colours::scheme::Variant flavour, Scheme::Mode mode) {
     return utils::Cache::keyFor(
-        u"%1|%2|%3"_s.arg(QString::number(sourceColour.value(), 16), toString(flavour), toString(mode)));
+        u"%1|%2|%3"_s.arg(QString::number(sourceColour.value(), 16), toString(flavour), modeName(mode)));
+}
+
+QString modeName(Scheme::Mode mode) {
+    switch (mode) {
+    case Scheme::Mode::Light:
+        return u"light"_s;
+    case Scheme::Mode::Dark:
+        return u"dark"_s;
+    }
+    Q_UNREACHABLE_RETURN(QString());
+}
+
+QList<NamedColour> namedColours(const SchemeColours& colours) {
+#define COLOUR(name) NamedColour{ u## #name, colours.name },
+    return { CAELESTIA_SCHEME_COLOURS(COLOUR) };
+#undef COLOUR
 }
 
 QList<m3colours::Argb> coloursForImage(const QImage& image) {

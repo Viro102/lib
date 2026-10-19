@@ -2,6 +2,7 @@
 
 #include <qfuture.h>
 #include <qimage.h>
+#include <qlist.h>
 #include <qstring.h>
 
 #include <m3colours/scheme.hpp>
@@ -126,6 +127,14 @@ struct Scheme {
     const Mode mode;
     const SchemeColours colours;
 };
+
+struct NamedColour {
+    QStringView name;
+    m3colours::Argb colour;
+};
+
+QList<NamedColour> namedColours(const SchemeColours& colours);
+QString modeName(Scheme::Mode mode);
 
 QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Scheme::Mode mode);
 Scheme schemeForImage(const QImage& image, m3colours::scheme::Variant flavour, Scheme::Mode mode);
