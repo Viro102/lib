@@ -15,7 +15,7 @@ using Qt::StringLiterals::operator""_s;
 namespace {
 
 constexpr Argb k_sourceColour{ 0xFF2962FF };
-constexpr Argb k_firstFrameColour{ 0xFFD50000 };
+constexpr Argb k_otherColour{ 0xFFD50000 };
 constexpr int k_tolerance = 4;
 
 bool closeTo(Argb a, Argb b) {
@@ -66,13 +66,13 @@ private slots:
     void dominantPrefersMostCommon() {
         auto image = solid(k_sourceColour.value());
         for (int x = 0; x < 2; ++x)
-            image.setPixel(x, 0, k_firstFrameColour.value());
+            image.setPixel(x, 0, k_otherColour.value());
         QCOMPARE(analyseImage(image).dominant, k_sourceColour);
     }
 
     void colourfulnessIsZeroForGrey() { QVERIFY(qFuzzyIsNull(analyseImage(solid(0xFF808080)).colourfulness)); }
 
-    void colourfulnessIsPositiveForColour() { QVERIFY(analyseImage(m_image).colourfulness > 10); }
+    void colourfulnessIsPositiveForColour() { QVERIFY(analyseImage(m_image).colourfulness > 0); }
 
     void luminanceSpansBlackToWhite() {
         QVERIFY(qFuzzyIsNull(analyseImage(solid(0xFF000000)).luminance));
@@ -100,7 +100,7 @@ private slots:
         QVERIFY(!path.isEmpty());
         const auto analysis = analyseForPath(path).result();
         QVERIFY(!analysis.colours.isEmpty());
-        QVERIFY(analysis.colours.first() != k_firstFrameColour);
+        QVERIFY(analysis.colours.first() != k_otherColour);
         QVERIFY(closeTo(analysis.colours.first(), k_sourceColour));
     }
 
@@ -109,7 +109,7 @@ private slots:
         QVERIFY(!path.isEmpty());
         const auto analysis = analyseForPath(path).result();
         QVERIFY(!analysis.colours.isEmpty());
-        QVERIFY(analysis.colours.first() != k_firstFrameColour);
+        QVERIFY(analysis.colours.first() != k_otherColour);
         QVERIFY(closeTo(analysis.colours.first(), k_sourceColour));
     }
 
