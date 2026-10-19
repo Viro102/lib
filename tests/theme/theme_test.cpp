@@ -1,4 +1,6 @@
+#include <qcolor.h>
 #include <qdir.h>
+#include <qdiriterator.h>
 #include <qfile.h>
 #include <qfileinfo.h>
 #include <qstandardpaths.h>
@@ -29,6 +31,14 @@ QString readFile(const QString& path) {
     if (!file.open(QIODevice::ReadOnly))
         return {};
     return QString::fromUtf8(file.readAll());
+}
+
+qsizetype countFiles(const QString& root) {
+    qsizetype count = 0;
+    for (QDirIterator it(root, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories); it.hasNext();
+        it.next())
+        ++count;
+    return count;
 }
 
 } // namespace
@@ -149,6 +159,95 @@ private slots:
         const auto result = readFile(out);
         QVERIFY(result.startsWith(u"test light {"));
         QVERIFY(result.contains(u"\"primary\":\"2962ff\""));
+    }
+
+    void rendersRemainingColourForms() {
+        const auto path = m_root.filePath(u"tpl.txt"_s);
+        writeFile(path, "{{ primary.green }} {{ primary.blue }} {{ primary.saturation }} {{ primary.lightness }} "
+                        "{{primary.hex}} {{   mode   }}");
+        const auto qc = QColor::fromRgb(0x29, 0x62, 0xFF);
+        const auto expected =
+            u"98 255 %1 %2 2962ff dark"_s.arg(qRound(qc.hslSaturationF() * 100)).arg(qRound(qc.lightnessF() * 100));
+        QCOMPARE(theme::Theme(scheme()).render(path), expected);
+        QCOMPARE(expected, u"98 255 100 58 2962ff dark"_s);
+    }
+
+    void renderOfMissingTemplateIsEmpty() { QVERIFY(theme::Theme(scheme()).render(u"/nonexistent/path"_s).isEmpty()); }
+
+    void renderLeavesTextWithoutFieldsUntouched() {
+        const auto path = m_root.filePath(u"plain.txt"_s);
+        const QByteArray text = "plain {{ lone\nopen }} close }} and {{ {\n}\n";
+        writeFile(path, text);
+        QCOMPARE(theme::Theme(scheme()).render(path), QString::fromUtf8(text));
+    }
+
+    void zedReplacesSymlink() {
+        const auto target = m_root.filePath(u"zed-target.json"_s);
+        const auto link = m_root.filePath(u"config/zed/themes/caelestia.json"_s);
+        writeFile(target, "original");
+        QFile::remove(link);
+        QVERIFY(QDir().mkpath(QFileInfo(link).absolutePath()));
+        QVERIFY(QFile::link(target, link));
+        QVERIFY(QFileInfo(link).isSymLink());
+
+        theme::Theme(scheme()).applyZed();
+
+        QVERIFY(!QFileInfo(link).isSymLink());
+        QVERIFY(QFileInfo(link).isFile());
+        QVERIFY(readFile(link).contains(u"\"appearance\": \"dark\""));
+        QCOMPARE(readFile(target), u"original"_s);
+    }
+
+    void customTemplatesInvalidJsonIsIgnored() {
+        const auto json = config::ConfigPaths::customThemesDir() + u"/templates.json"_s;
+
+        writeFile(json, "{not json");
+        const auto before = countFiles(m_root.path());
+        theme::Theme(scheme()).applyCustom();
+        QCOMPARE(countFiles(m_root.path()), before);
+
+        writeFile(json, R"({"from":"a","to":"b"})");
+        theme::Theme(scheme()).applyCustom();
+        QCOMPARE(countFiles(m_root.path()), before);
+    }
+
+    void customTemplatesExpandTilde() {
+        const auto oldHome = qgetenv("HOME");
+        const auto home = m_root.filePath(u"home"_s);
+        QVERIFY(QDir().mkpath(home));
+        qputenv("HOME", home.toUtf8());
+
+        const auto themesDir = config::ConfigPaths::customThemesDir();
+        writeFile(themesDir + u"/tilde.tpl"_s, "{{ surface.hex }}");
+        writeFile(themesDir + u"/templates.json"_s, R"([{"from":"tilde.tpl","to":"~/custom/tilde.conf"}])");
+
+        theme::Theme(scheme()).applyCustom();
+
+        qputenv("HOME", oldHome);
+        QCOMPARE(readFile(home + u"/custom/tilde.conf"_s), u"101418"_s);
+    }
+
+    void customTemplateMissingSourceWritesEmptyFile() {
+        const auto out = m_root.filePath(u"missing-source/out.conf"_s);
+        writeFile(config::ConfigPaths::customThemesDir() + u"/templates.json"_s,
+            u"[{\"from\":\"does-not-exist.tpl\",\"to\":\"%1\"}]"_s.arg(out).toUtf8());
+
+        theme::Theme(scheme()).applyCustom();
+
+        QVERIFY(QFileInfo(out).isFile());
+        QCOMPARE(QFileInfo(out).size(), 0);
+    }
+
+    void postHookReceivesFlavour() {
+        auto& config = config::Config::instance();
+        const auto out = m_root.filePath(u"hook-flavour.txt"_s);
+        QVERIFY(config.setValue(u"theme.targets.discord", false));
+        QVERIFY(config.setValue(u"theme.postHook", u"echo \"$SCHEME_FLAVOUR\" > "_s + out));
+
+        theme::Theme(scheme()).apply().waitForFinished();
+
+        QVERIFY(config.setValue(u"theme.postHook", u""_s));
+        QCOMPARE(readFile(out).trimmed(), u"default"_s);
     }
 };
 

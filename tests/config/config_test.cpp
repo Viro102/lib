@@ -196,6 +196,16 @@ private slots:
         QCOMPARE(config.paths().wallpapersDir(), u"/w"_s);
         QCOMPARE(config.theme().postHook(), u"h"_s);
     }
+
+    void setValueWritesEmptyMiddleKey() {
+        auto& config = Config::instance();
+        writeFile(Config::configPath(), "{}");
+        config.reload();
+        QVERIFY(config.setValue(u"a..b", 1));
+        QVERIFY(config.root()[u"a"_s].toObject().contains(u""_s));
+        QCOMPARE(config.value(u"a..b").toInt(), 1);
+        QCOMPARE(readFile(Config::configPath()), config.root());
+    }
 };
 
 QTEST_GUILESS_MAIN(TestConfig)

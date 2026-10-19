@@ -5,6 +5,8 @@
 #include <qtest.h>
 
 #include "caelestia/media/analysis.hpp"
+#include "analysiscache.hpp"
+#include "videopixels.hpp"
 
 using namespace caelestia::media;
 using m3colours::Argb;
@@ -28,8 +30,8 @@ bool sameAnalysis(const Analysis& a, const Analysis& b) {
            qFuzzyCompare(a.tone + 1, b.tone + 1);
 }
 
-QImage solid(QRgb colour) {
-    QImage image(8, 8, QImage::Format_RGB32);
+QImage solid(QRgb colour, int width = 8, int height = 8) {
+    QImage image(width, height, QImage::Format_RGB32);
     image.fill(colour);
     return image;
 }
@@ -130,6 +132,70 @@ private slots:
         file.close();
 
         QVERIFY(sameAnalysis(analyseForPath(path).result(), analysis));
+    }
+
+    void sampleSizeKeepsSmallImages() {
+        QCOMPARE(sampleSize(8, 8, 1000), QSize(8, 8));
+        QCOMPARE(sampleSize(40, 25, 1000), QSize(40, 25));
+    }
+
+    void sampleSizeDownscalesPreservingAspect() {
+        constexpr std::size_t target = 1'000'000;
+        const auto size = sampleSize(4000, 2000, target);
+        const auto area = static_cast<std::size_t>(size.width()) * static_cast<std::size_t>(size.height());
+        QVERIFY(area >= target);
+        QVERIFY(area <= target + static_cast<std::size_t>(size.width() + size.height()));
+        QVERIFY(qAbs(static_cast<double>(size.width()) / size.height() - 2.0) < 0.02);
+
+        QVERIFY(sampleSize(1, 100'000, 1000).width() >= 1);
+    }
+
+    void analysisIsIndependentOfImageSize() {
+        const auto small = analyseImage(solid(k_sourceColour.value()));
+        const auto large = analyseImage(solid(k_sourceColour.value(), 2048, 1024));
+        QVERIFY(!large.colours.isEmpty());
+        QCOMPARE(large.dominant, small.dominant);
+        QCOMPARE(large.colours.first(), small.colours.first());
+        QVERIFY(qAbs(large.luminance - small.luminance) < 1e-6);
+        QVERIFY(qAbs(large.tone - small.tone) < 1e-6);
+    }
+
+    void nonImageFileIsEmpty() {
+        const auto path = m_root.filePath(u"not_an_image.txt"_s);
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        QCOMPARE(file.write("hello"), 5);
+        file.close();
+
+        QVERIFY(sameAnalysis(analyseForPath(path).result(), Analysis{}));
+    }
+
+    void corruptCacheEntryYieldsEmptyAnalysis() {
+        const auto path = m_root.filePath(u"corrupt.png"_s);
+        QVERIFY(QFile::copy(m_path, path));
+        const auto key = AnalysisCache::keyForPath(path);
+        const QByteArray garbage(7, '\x01');
+
+        AnalysisCache::instance().store(key, garbage);
+        QCOMPARE(AnalysisCache::instance().lookup(key).result(), garbage);
+
+        QVERIFY(sameAnalysis(analyseForPath(path).result(), Analysis{}));
+    }
+
+    void truncatedCacheEntryYieldsEmptyAnalysis() {
+        const auto path = m_root.filePath(u"truncated.png"_s);
+        QVERIFY(QFile::copy(m_path, path));
+        const auto key = AnalysisCache::keyForPath(path);
+
+        QVERIFY(!analyseForPath(path).result().colours.isEmpty());
+        const auto valid = AnalysisCache::instance().lookup(key).result();
+        QVERIFY(valid.size() > 4);
+
+        const auto truncated = valid.chopped(4);
+        AnalysisCache::instance().store(key, truncated);
+        QCOMPARE(AnalysisCache::instance().lookup(key).result(), truncated);
+
+        QVERIFY(sameAnalysis(analyseForPath(path).result(), Analysis{}));
     }
 };
 
