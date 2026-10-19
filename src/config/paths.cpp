@@ -9,19 +9,6 @@ namespace caelestia::config {
 
 using Qt::StringLiterals::operator""_s;
 
-namespace {
-
-QString resolvePath(QString path, const QString& defaultPath) {
-    if (path.isEmpty())
-        return defaultPath;
-
-    if (path == u'~' || path.startsWith(u"~/"_s))
-        path = QDir::homePath() + path.mid(1);
-    return QDir::cleanPath(QDir(defaultPath).absoluteFilePath(path));
-}
-
-} // namespace
-
 ConfigPaths::ConfigPaths(Config* config)
     : m_config(config) {}
 
@@ -61,8 +48,25 @@ void ConfigPaths::setRecordingsDir(const QString& dir) {
     m_config->setValue(u"paths.recordingsDir"_s, dir);
 }
 
+QString ConfigPaths::stateDir() {
+    return QStandardPaths::writableLocation(QStandardPaths::GenericStateLocation) + u"/caelestia"_s;
+}
+
 QString ConfigPaths::customSchemesDir() {
     return Config::configDir() + u"/schemes"_s;
+}
+
+QString ConfigPaths::customThemesDir() {
+    return Config::configDir() + u"/themes"_s;
+}
+
+QString ConfigPaths::resolvePath(QString path, const QString& defaultPath) {
+    if (path.isEmpty())
+        return defaultPath;
+
+    if (path == u'~' || path.startsWith(u"~/"_s))
+        path = QDir::homePath() + path.mid(1);
+    return QDir::cleanPath(QDir(defaultPath).absoluteFilePath(path));
 }
 
 } // namespace caelestia::config
