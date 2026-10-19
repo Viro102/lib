@@ -15,6 +15,7 @@ public:
 
     static Config& instance();
 
+    [[nodiscard]] static QString configDir();
     [[nodiscard]] static QString configPath();
 
     [[nodiscard]] QJsonObject root() const;

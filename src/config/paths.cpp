@@ -61,4 +61,8 @@ void ConfigPaths::setRecordingsDir(const QString& dir) {
     m_config->setValue(u"paths.recordingsDir"_s, dir);
 }
 
+QString ConfigPaths::customSchemesDir() {
+    return Config::configDir() + u"/schemes"_s;
+}
+
 } // namespace caelestia::config

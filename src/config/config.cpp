@@ -33,8 +33,12 @@ Config& Config::instance() {
     return s_config;
 }
 
+QString Config::configDir() {
+    return QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + u"/caelestia"_s;
+}
+
 QString Config::configPath() {
-    return QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + u"/caelestia/config.json"_s;
+    return configDir() + u"/config.json"_s;
 }
 
 Config::Config()

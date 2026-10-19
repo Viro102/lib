@@ -23,6 +23,8 @@ public:
     [[nodiscard]] QString recordingsDir() const;
     void setRecordingsDir(const QString& dir);
 
+    [[nodiscard]] static QString customSchemesDir();
+
 private:
     explicit ConfigPaths(Config* config);
 
