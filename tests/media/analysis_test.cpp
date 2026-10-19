@@ -170,7 +170,7 @@ private slots:
         QVERIFY(sameAnalysis(analyseForPath(path).result(), Analysis{}));
     }
 
-    void corruptCacheEntryYieldsEmptyAnalysis() {
+    void corruptCacheEntryIsReanalysed() {
         const auto path = m_root.filePath(u"corrupt.png"_s);
         QVERIFY(QFile::copy(m_path, path));
         const auto key = AnalysisCache::keyForPath(path);
@@ -179,10 +179,11 @@ private slots:
         AnalysisCache::instance().store(key, garbage);
         QCOMPARE(AnalysisCache::instance().lookup(key).result(), garbage);
 
-        QVERIFY(sameAnalysis(analyseForPath(path).result(), Analysis{}));
+        QVERIFY(sameAnalysis(analyseForPath(path).result(), analyseImage(m_image)));
+        QCOMPARE_NE(AnalysisCache::instance().lookup(key).result(), garbage);
     }
 
-    void truncatedCacheEntryYieldsEmptyAnalysis() {
+    void truncatedCacheEntryIsReanalysed() {
         const auto path = m_root.filePath(u"truncated.png"_s);
         QVERIFY(QFile::copy(m_path, path));
         const auto key = AnalysisCache::keyForPath(path);
@@ -195,7 +196,8 @@ private slots:
         AnalysisCache::instance().store(key, truncated);
         QCOMPARE(AnalysisCache::instance().lookup(key).result(), truncated);
 
-        QVERIFY(sameAnalysis(analyseForPath(path).result(), Analysis{}));
+        QVERIFY(sameAnalysis(analyseForPath(path).result(), analyseImage(m_image)));
+        QCOMPARE(AnalysisCache::instance().lookup(key).result(), valid);
     }
 };
 

@@ -196,8 +196,8 @@ QFuture<Analysis> analyseForPath(const QString& path) {
     return AnalysisCache::instance()
         .lookup(AnalysisCache::keyForPath(path))
         .then(QtFuture::Launch::Async, [path](const QByteArray& data) -> Analysis {
-            if (!data.isEmpty())
-                return deserialise(data);
+            if (const auto cached = deserialise(data); !cached.colours.isEmpty())
+                return cached;
 
             const auto analysis = analysePixels(pixelsForFile(path));
             if (!analysis.colours.isEmpty())
