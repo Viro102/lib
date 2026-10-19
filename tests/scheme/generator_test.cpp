@@ -8,6 +8,7 @@
 
 #include "caelestia/scheme/scheme.hpp"
 #include "generator.hpp"
+#include "helpers.hpp"
 
 using namespace caelestia::scheme;
 using m3colours::Argb;
@@ -30,10 +31,6 @@ constexpr std::array k_variants = {
     std::pair{ Variant::FruitSalad, "FruitSalad" },
     std::pair{ Variant::Cmf, "Cmf" },
 };
-
-auto allColours(const SchemeColours& colours) {
-    return std::bit_cast<std::array<Argb, sizeof(SchemeColours) / sizeof(Argb)>>(colours);
-}
 
 bool isGrayscale(Argb colour) {
     return colour.red() == colour.green() && colour.green() == colour.blue();

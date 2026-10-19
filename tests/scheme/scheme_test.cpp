@@ -14,6 +14,7 @@
 #include "caelestia/config/paths.hpp"
 #include "caelestia/scheme/scheme.hpp"
 #include "generator.hpp"
+#include "helpers.hpp"
 #include "schemecache.hpp"
 
 using namespace caelestia::scheme;
@@ -41,10 +42,6 @@ const std::array k_variantNames = {
 
 QByteArray toBytes(const SchemeColours& colours) {
     return { reinterpret_cast<const char*>(&colours), sizeof(colours) };
-}
-
-auto allColours(const SchemeColours& colours) {
-    return std::bit_cast<std::array<Argb, sizeof(SchemeColours) / sizeof(Argb)>>(colours);
 }
 
 } // namespace

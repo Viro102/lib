@@ -7,7 +7,7 @@
 #include <qtest.h>
 
 #include "caelestia/config/config.hpp"
-#include "helpers.hpp"
+#include "common.hpp"
 
 using namespace caelestia::config;
 using Qt::StringLiterals::operator""_s;
@@ -86,7 +86,7 @@ private slots:
         QCOMPARE(config.value(u"new.deep.key").toString(), u"x"_s);
         QCOMPARE(config.value(u"name").toString(), u"changed"_s);
 
-        const auto written = readFile(Config::configPath());
+        const auto written = readJson(Config::configPath());
         QCOMPARE(written, config.root());
         QCOMPARE(written[u"bar"_s].toObject()[u"height"_s].toInt(), 48);
     }
@@ -121,7 +121,7 @@ private slots:
         QCOMPARE(config.value(u"list").toArray(), (QJsonArray{ 1, 2 }));
         QCOMPARE(config.value(u"obj.k").toBool(), true);
         QVERIFY(config.value(u"nil").isNull());
-        QCOMPARE(readFile(Config::configPath()), config.root());
+        QCOMPARE(readJson(Config::configPath()), config.root());
     }
 
     void setValueRejectsEmptyPath() {
@@ -138,7 +138,7 @@ private slots:
         QVERIFY(!QFile::exists(Config::configPath()));
         QVERIFY(config.setValue(u"name", u"recreated"_s));
         QVERIFY(QFile::exists(Config::configPath()));
-        QCOMPARE(readFile(Config::configPath())[u"name"_s].toString(), u"recreated"_s);
+        QCOMPARE(readJson(Config::configPath())[u"name"_s].toString(), u"recreated"_s);
     }
 
     void setValueWritesIndentedJson() {
@@ -204,7 +204,7 @@ private slots:
         QVERIFY(config.setValue(u"a..b", 1));
         QVERIFY(config.root()[u"a"_s].toObject().contains(u""_s));
         QCOMPARE(config.value(u"a..b").toInt(), 1);
-        QCOMPARE(readFile(Config::configPath()), config.root());
+        QCOMPARE(readJson(Config::configPath()), config.root());
     }
 };
 

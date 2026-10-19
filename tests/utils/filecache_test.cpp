@@ -7,6 +7,7 @@
 #include <atomic>
 
 #include "caelestia/utils/cache.hpp"
+#include "common.hpp"
 
 using namespace caelestia::utils;
 using Qt::StringLiterals::operator""_s;
@@ -15,16 +16,6 @@ namespace {
 
 constexpr qint64 k_maxSize = 10;
 const auto k_suffix = u".bin"_s;
-
-QByteArray bytes(int n, char c) {
-    return { n, c };
-}
-
-void writeFile(const QString& path, const QByteArray& data) {
-    QFile file(path);
-    QVERIFY(file.open(QIODevice::WriteOnly));
-    QCOMPARE(file.write(data), data.size());
-}
 
 } // namespace
 

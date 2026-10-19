@@ -3,7 +3,7 @@
 #include <qtest.h>
 
 #include "caelestia/config/config.hpp"
-#include "helpers.hpp"
+#include "common.hpp"
 
 using namespace caelestia::config;
 using Qt::StringLiterals::operator""_s;
@@ -14,7 +14,7 @@ class TestConfigTheme : public QObject {
 private:
     QTemporaryDir m_root;
 
-    static QJsonObject writtenTheme() { return readFile(Config::configPath())[u"theme"_s].toObject(); }
+    static QJsonObject writtenTheme() { return readJson(Config::configPath())[u"theme"_s].toObject(); }
 
 private slots:
 

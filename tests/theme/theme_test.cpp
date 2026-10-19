@@ -15,25 +15,12 @@
 #include "caelestia/config/config.hpp"
 #include "caelestia/scheme/scheme.hpp"
 #include "caelestia/theme/theme.hpp"
+#include "common.hpp"
 
 using namespace caelestia;
 using Qt::StringLiterals::operator""_s;
 
 namespace {
-
-void writeFile(const QString& path, const QByteArray& data) {
-    QVERIFY(QDir().mkpath(QFileInfo(path).absolutePath()));
-    QFile file(path);
-    QVERIFY(file.open(QIODevice::WriteOnly));
-    QCOMPARE(file.write(data), data.size());
-}
-
-QString readFile(const QString& path) {
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly))
-        return {};
-    return QString::fromUtf8(file.readAll());
-}
 
 qsizetype countFiles(const QString& root) {
     qsizetype count = 0;

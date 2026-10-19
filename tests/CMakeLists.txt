@@ -13,6 +13,7 @@ function(create_test module name)
 
     add_executable(${target_name} "${name}_test.cpp")
     set_target_properties(${target_name} PROPERTIES OUTPUT_NAME ${exec_name})
+    target_include_directories(${target_name} PRIVATE "${PROJECT_SOURCE_DIR}/tests")
     target_link_libraries(${target_name} PRIVATE ${libs} Qt::Test)
     add_test(NAME "${module}_${name}" COMMAND ${exec_name})
 endfunction()

@@ -6,6 +6,7 @@
 #include <atomic>
 
 #include "caelestia/utils/cache.hpp"
+#include "common.hpp"
 
 using namespace caelestia::utils;
 using Qt::StringLiterals::operator""_s;
@@ -13,10 +14,6 @@ using Qt::StringLiterals::operator""_s;
 namespace {
 
 constexpr qint64 k_maxSize = 10;
-
-QByteArray bytes(int n, char c) {
-    return { n, c };
-}
 
 } // namespace
 
