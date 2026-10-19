@@ -26,6 +26,7 @@ namespace {
 
 Q_LOGGING_CATEGORY(lcScheme, "caelestia.scheme", QtInfoMsg)
 
+constexpr int k_maxSize = 1024 * 1024;
 constexpr int k_cacheVersion = 1;
 
 QString toString(m3colours::scheme::Variant flavour) {
@@ -255,7 +256,7 @@ QFuture<Scheme> schemeForPath(const QString& path, m3colours::scheme::Variant fl
 }
 
 SchemeCache::SchemeCache()
-    : BlobCache(u"schemes"_s, 1024, k_cacheVersion) {}
+    : BlobCache(u"schemes"_s, k_maxSize, k_cacheVersion) {}
 
 SchemeCache& SchemeCache::instance() {
     static SchemeCache s_instance;
