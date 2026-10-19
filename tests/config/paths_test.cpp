@@ -17,7 +17,7 @@ private:
     QTemporaryDir m_root;
     QString m_home;
 
-    static QJsonObject writtenPaths() { return readJson(Config::configPath())[u"paths"_s].toObject(); }
+    static QJsonObject writtenPaths() { return readJson(Config::configPath()).value(u"paths"_s).toObject(); }
 
 private slots:
 
@@ -68,8 +68,8 @@ private slots:
     }
 
     void resolvePath() {
-        QFETCH(QString, path);
-        QFETCH(QString, expected);
+        QFETCH(const QString, path);
+        QFETCH(const QString, expected);
         QCOMPARE(ConfigPaths::resolvePath(path, u"/base/default"_s), expected);
     }
 
@@ -126,7 +126,7 @@ private slots:
     void settersStoreRawNotResolved() {
         const auto& paths = Config::instance().paths();
         paths.setWallpapersDir(u"~/a/../b"_s);
-        QCOMPARE(writtenPaths()[u"wallpapersDir"_s].toString(), u"~/a/../b"_s);
+        QCOMPARE(writtenPaths().value(u"wallpapersDir"_s).toString(), u"~/a/../b"_s);
         QCOMPARE(paths.wallpapersDir(), m_home + u"/b"_s);
     }
 };

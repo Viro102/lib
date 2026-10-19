@@ -14,7 +14,7 @@ class TestConfigApps : public QObject {
 private:
     QTemporaryDir m_root;
 
-    static QJsonObject writtenApps() { return readJson(Config::configPath())[u"apps"_s].toObject(); }
+    static QJsonObject writtenApps() { return readJson(Config::configPath()).value(u"apps"_s).toObject(); }
 
 private slots:
 
@@ -101,14 +101,14 @@ private slots:
         config.apps().setTerminal(u"kitty"_s);
         QCOMPARE(config.apps().browser(), u"zen"_s);
         QCOMPARE(config.value(u"other").toInt(), 1);
-        QCOMPARE(writtenApps()[u"browser"_s].toString(), u"zen"_s);
+        QCOMPARE(writtenApps().value(u"browser"_s).toString(), u"zen"_s);
     }
 
     void settingEmptyRevertsToDefault() {
         const auto& apps = Config::instance().apps();
         apps.setTerminal(u""_s);
         QCOMPARE(apps.terminal(), ConfigApps::defaultTerminal());
-        QCOMPARE(writtenApps()[u"terminal"_s].toString(), u""_s);
+        QCOMPARE(writtenApps().value(u"terminal"_s).toString(), u""_s);
     }
 };
 

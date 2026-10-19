@@ -14,7 +14,7 @@ class TestConfigTheme : public QObject {
 private:
     QTemporaryDir m_root;
 
-    static QJsonObject writtenTheme() { return readJson(Config::configPath())[u"theme"_s].toObject(); }
+    static QJsonObject writtenTheme() { return readJson(Config::configPath()).value(u"theme"_s).toObject(); }
 
 private slots:
 
@@ -64,13 +64,13 @@ private slots:
         QVERIFY(!theme.targetEnabled(u"gtk"));
         QVERIFY(theme.targetEnabled(u"hypr"));
 
-        auto targets = writtenTheme()[u"targets"_s].toObject();
+        auto targets = writtenTheme().value(u"targets"_s).toObject();
         QCOMPARE(targets[u"gtk"_s].toBool(), false);
         QCOMPARE(targets[u"hypr"_s].toBool(), true);
 
         theme.setTargetEnabled(u"gtk", true);
         QVERIFY(theme.targetEnabled(u"gtk"));
-        targets = writtenTheme()[u"targets"_s].toObject();
+        targets = writtenTheme().value(u"targets"_s).toObject();
         QCOMPARE(targets[u"gtk"_s].toBool(), true);
     }
 
@@ -145,7 +145,7 @@ private slots:
 
         theme.setPostHook(u"true"_s);
         QCOMPARE(theme.postHook(), u"true"_s);
-        QCOMPARE(writtenTheme()[u"postHook"_s].toString(), u"true"_s);
+        QCOMPARE(writtenTheme().value(u"postHook"_s).toString(), u"true"_s);
     }
 
     void postHookNonStringIsEmpty() {

@@ -246,7 +246,8 @@ private slots:
         QVERIFY(theme::Theme::saveState(scheme(scheme::Scheme::Mode::Light)));
 
         const auto loaded = theme::Theme::loadState();
-        QVERIFY(loaded.has_value());
+        if (!loaded.has_value())
+            QFAIL("loadState returned nullopt");
         QCOMPARE(loaded->name, u"test"_s);
         QCOMPARE(loaded->flavour, u"default"_s);
         QCOMPARE(loaded->mode, scheme::Scheme::Mode::Light);

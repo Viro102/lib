@@ -3,3 +3,7 @@ InheritParentConfig: true
 Checks: >
   -readability-convert-member-functions-to-static,
   -misc-use-internal-linkage
+
+CheckOptions:
+  # QtTest data-driven slots must be named <test>_data
+  readability-identifier-naming.MethodIgnoredRegexp: '^[a-z][A-Za-z0-9]*_data$'

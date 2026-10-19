@@ -27,17 +27,17 @@ namespace {
 constexpr Argb k_sourceColour{ 0xFF2962FF };
 constexpr Argb k_fallbackColour{ 0xFF4285F4 };
 
-const std::array k_variantNames = {
-    std::pair{ Variant::Monochrome, u"monochrome"_s },
-    std::pair{ Variant::Neutral, u"neutral"_s },
-    std::pair{ Variant::TonalSpot, u"tonalspot"_s },
-    std::pair{ Variant::Vibrant, u"vibrant"_s },
-    std::pair{ Variant::Expressive, u"expressive"_s },
-    std::pair{ Variant::Fidelity, u"fidelity"_s },
-    std::pair{ Variant::Content, u"content"_s },
-    std::pair{ Variant::Rainbow, u"rainbow"_s },
-    std::pair{ Variant::FruitSalad, u"fruitsalad"_s },
-    std::pair{ Variant::Cmf, u"cmf"_s },
+constexpr std::array k_variantNames = {
+    std::pair{ Variant::Monochrome, QStringView(u"monochrome") },
+    std::pair{ Variant::Neutral, QStringView(u"neutral") },
+    std::pair{ Variant::TonalSpot, QStringView(u"tonalspot") },
+    std::pair{ Variant::Vibrant, QStringView(u"vibrant") },
+    std::pair{ Variant::Expressive, QStringView(u"expressive") },
+    std::pair{ Variant::Fidelity, QStringView(u"fidelity") },
+    std::pair{ Variant::Content, QStringView(u"content") },
+    std::pair{ Variant::Rainbow, QStringView(u"rainbow") },
+    std::pair{ Variant::FruitSalad, QStringView(u"fruitsalad") },
+    std::pair{ Variant::Cmf, QStringView(u"cmf") },
 };
 
 QByteArray toBytes(const SchemeColours& colours) {
@@ -176,7 +176,7 @@ private slots:
 
     void flavourNames() {
         for (const auto& [variant, name] : k_variantNames)
-            QCOMPARE(schemeForImage(m_image, variant, Scheme::Mode::Dark).flavour, name);
+            QCOMPARE(schemeForImage(m_image, variant, Scheme::Mode::Dark).flavour, name.toString());
     }
 
     void schemeFromImage() {
@@ -215,28 +215,28 @@ private slots:
     }
 
     void schemeFromPathUsesCache() {
-        constexpr auto variant = Variant::FruitSalad;
-        constexpr auto mode = Scheme::Mode::Dark;
+        constexpr auto k_variant = Variant::FruitSalad;
+        constexpr auto k_mode = Scheme::Mode::Dark;
         const auto seeded = gen::genScheme(Argb(0xFFFF0000), Variant::Vibrant, Scheme::Mode::Light);
-        const auto key = SchemeCache::keyFor(k_sourceColour, variant, mode);
+        const auto key = SchemeCache::keyFor(k_sourceColour, k_variant, k_mode);
         SchemeCache::instance().store(key, toBytes(seeded));
         QCOMPARE(SchemeCache::instance().lookup(key).result(), toBytes(seeded));
 
-        const auto scheme = schemeForPath(m_path, variant, mode).result();
+        const auto scheme = schemeForPath(m_path, k_variant, k_mode).result();
         QCOMPARE(allColours(scheme.colours), allColours(seeded));
-        QVERIFY(allColours(scheme.colours) != allColours(gen::genScheme(k_sourceColour, variant, mode)));
+        QVERIFY(allColours(scheme.colours) != allColours(gen::genScheme(k_sourceColour, k_variant, k_mode)));
     }
 
     void schemeFromPathIgnoresWrongSizedCache() {
-        constexpr auto variant = Variant::Rainbow;
-        constexpr auto mode = Scheme::Mode::Light;
-        const auto key = SchemeCache::keyFor(k_sourceColour, variant, mode);
+        constexpr auto k_variant = Variant::Rainbow;
+        constexpr auto k_mode = Scheme::Mode::Light;
+        const auto key = SchemeCache::keyFor(k_sourceColour, k_variant, k_mode);
         const QByteArray bad(static_cast<qsizetype>(sizeof(SchemeColours)) - 1, '\x7f');
         SchemeCache::instance().store(key, bad);
         QCOMPARE(SchemeCache::instance().lookup(key).result(), bad);
 
-        const auto scheme = schemeForPath(m_path, variant, mode).result();
-        QCOMPARE(allColours(scheme.colours), allColours(gen::genScheme(k_sourceColour, variant, mode)));
+        const auto scheme = schemeForPath(m_path, k_variant, k_mode).result();
+        QCOMPARE(allColours(scheme.colours), allColours(gen::genScheme(k_sourceColour, k_variant, k_mode)));
     }
 
     void schemeFromNullImageUsesFallback() {

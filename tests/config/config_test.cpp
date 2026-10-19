@@ -97,7 +97,7 @@ private slots:
 
         const auto written = readJson(Config::configPath());
         QCOMPARE(written, config.root());
-        QCOMPARE(written[u"bar"_s].toObject()[u"height"_s].toInt(), 48);
+        QCOMPARE(written.value(u"bar"_s).toObject().value(u"height"_s).toInt(), 48);
     }
 
     void setValuePreservesSiblings() {
@@ -147,7 +147,7 @@ private slots:
         QVERIFY(!QFile::exists(Config::configPath()));
         QVERIFY(config.setValue(u"name", u"recreated"_s));
         QVERIFY(QFile::exists(Config::configPath()));
-        QCOMPARE(readJson(Config::configPath())[u"name"_s].toString(), u"recreated"_s);
+        QCOMPARE(readJson(Config::configPath()).value(u"name"_s).toString(), u"recreated"_s);
     }
 
     void setValueWritesIndentedJson() {
@@ -206,7 +206,7 @@ private slots:
     void setValueWritesEmptyMiddleKey() {
         auto& config = Config::instance();
         QVERIFY(config.setValue(u"a..b", 1));
-        QVERIFY(config.root()[u"a"_s].toObject().contains(u""_s));
+        QVERIFY(config.root().value(u"a"_s).toObject().contains(u""_s));
         QCOMPARE(config.value(u"a..b").toInt(), 1);
         QCOMPARE(readJson(Config::configPath()), config.root());
     }

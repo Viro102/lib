@@ -140,11 +140,11 @@ private slots:
     }
 
     void sampleSizeDownscalesPreservingAspect() {
-        constexpr std::size_t target = 1'000'000;
-        const auto size = sampleSize(4000, 2000, target);
+        constexpr std::size_t k_target = 1'000'000;
+        const auto size = sampleSize(4000, 2000, k_target);
         const auto area = static_cast<std::size_t>(size.width()) * static_cast<std::size_t>(size.height());
-        QVERIFY(area >= target);
-        QVERIFY(area <= target + static_cast<std::size_t>(size.width() + size.height()));
+        QVERIFY(area >= k_target);
+        QVERIFY(area <= k_target + static_cast<std::size_t>(size.width() + size.height()));
         QVERIFY(qAbs(static_cast<double>(size.width()) / size.height() - 2.0) < 0.02);
 
         QVERIFY(sampleSize(1, 100'000, 1000).width() >= 1);

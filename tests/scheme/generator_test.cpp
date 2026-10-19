@@ -84,7 +84,7 @@ private slots:
 
     void everyVariantIsOpaque() {
         QFETCH(Variant, variant);
-        QFETCH(Scheme::Mode, mode);
+        QFETCH(const Scheme::Mode, mode);
 
         const auto colours = gen::genScheme(k_sourceColour, variant, mode);
         for (const auto colour : allColours(colours))
