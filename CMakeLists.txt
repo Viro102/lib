@@ -51,6 +51,11 @@ target_include_directories(caelestia-headers INTERFACE
     $<INSTALL_INTERFACE:include>
 )
 
+option(BUILD_TESTING "Build tests" OFF)
+if(BUILD_TESTING)
+    add_compile_definitions(CAELESTIA_TESTING)
+endif()
+
 add_subdirectory(src/config)
 add_subdirectory(src/utils)
 add_subdirectory(src/media)
@@ -99,7 +104,6 @@ install(FILES
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/caelestia
 )
 
-option(BUILD_TESTING "Build tests" OFF)
 if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(tests)

@@ -7,7 +7,9 @@
 
 #include "caelestia/scheme/scheme.hpp"
 
+#ifdef CAELESTIA_TESTING
 class TestTheme;
+#endif
 
 namespace caelestia::theme {
 
@@ -18,7 +20,9 @@ public:
     [[nodiscard]] QFuture<void> apply() const;
 
 private:
+#ifdef CAELESTIA_TESTING
     friend class ::TestTheme;
+#endif
 
     scheme::Scheme m_scheme;
     QString m_iconTheme;
