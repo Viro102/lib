@@ -1,13 +1,6 @@
-#include <qeventloop.h>
 #include <qfileinfo.h>
 #include <qimagereader.h>
-#include <qloggingcategory.h>
-#include <qmediaplayer.h>
 #include <qmimedatabase.h>
-#include <qtimer.h>
-#include <qurl.h>
-#include <qvideoframe.h>
-#include <qvideosink.h>
 
 #include <m3colours/quantise.hpp>
 #include <m3colours/scheme.hpp>
@@ -21,14 +14,13 @@
 
 #include "caelestia/scheme/scheme.hpp"
 #include "scorecache.hpp"
+#include "videopixels.hpp"
 
 namespace caelestia::scheme {
 
 using Qt::StringLiterals::operator""_s;
 
 namespace {
-
-Q_LOGGING_CATEGORY(lcScore, "caelestia.scheme.score", QtInfoMsg)
 
 constexpr int k_maxSize = 1024 * 1024;
 constexpr int k_cacheVersion = 2;
@@ -38,7 +30,6 @@ constexpr int k_maxColours = 128;
 constexpr std::size_t k_targetPixels = (std::size_t{ 1 } << 20) + 1;
 constexpr int k_maxFrames = 300;
 constexpr int k_videoSamples = 16;
-constexpr int k_videoTimeoutMs = 5000;
 
 static_assert(sizeof(m3colours::Argb) == sizeof(QRgb) && std::is_standard_layout_v<m3colours::Argb>);
 
@@ -78,11 +69,8 @@ std::size_t pixelCount(const QImage& image) {
 void appendFrame(std::vector<m3colours::Argb>& pixels, const QImage& frame, std::size_t targetPixels) {
     auto formatted = frame.convertToFormat(QImage::Format_ARGB32);
 
-    if (const auto area = pixelCount(formatted); area > targetPixels) {
-        const auto factor = std::sqrt(static_cast<double>(targetPixels) / static_cast<double>(area));
-        formatted = formatted.scaled(static_cast<int>(std::ceil(formatted.width() * factor)),
-            static_cast<int>(std::ceil(formatted.height() * factor)), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-    }
+    if (const auto size = sampleSize(formatted.width(), formatted.height(), targetPixels); size != formatted.size())
+        formatted = formatted.scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
     const auto* bits = reinterpret_cast<const m3colours::Argb*>(formatted.constBits());
     pixels.insert(pixels.end(), bits, bits + pixelCount(formatted));
@@ -103,77 +91,9 @@ std::vector<m3colours::Argb> animationPixels(QImageReader& reader) {
     return pixels;
 }
 
-std::vector<m3colours::Argb> videoPixels(const QString& path) {
-    QMediaPlayer player;
-    QVideoSink sink;
-    player.setVideoSink(&sink);
-
-    QEventLoop loop;
-    QTimer timeout;
-    timeout.setSingleShot(true);
-    QObject::connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
-    QObject::connect(&player, &QMediaPlayer::mediaStatusChanged, &loop, &QEventLoop::quit);
-    QObject::connect(&player, &QMediaPlayer::errorOccurred, &loop, &QEventLoop::quit);
-
-    QVideoFrame frame;
-    QObject::connect(&sink, &QVideoSink::videoFrameChanged, &loop, [&](const QVideoFrame& f) {
-        frame = f;
-        loop.quit();
-    });
-
-    const auto waitUntil = [&](auto&& done) {
-        timeout.start(k_videoTimeoutMs);
-        while (!done() && timeout.isActive())
-            loop.exec();
-        return done();
-    };
-
-    player.setSource(QUrl::fromLocalFile(path));
-    waitUntil([&] {
-        const auto status = player.mediaStatus();
-        return status != QMediaPlayer::NoMedia && status != QMediaPlayer::LoadingMedia;
-    });
-
-    if (player.error() != QMediaPlayer::NoError || !player.hasVideo()) {
-        qCWarning(lcScore) << "Failed to load video" << path << player.errorString();
-        return {};
-    }
-
-    std::vector<m3colours::Argb> pixels;
-    const auto target = pixelsPerFrame(k_videoSamples);
-    const auto sample = [&] {
-        const auto frameValid = waitUntil([&] {
-            return frame.isValid();
-        });
-        if (!frameValid)
-            return false;
-
-        appendFrame(pixels, frame.toImage(), target);
-        frame = {};
-        return true;
-    };
-
-    player.pause();
-    if (!sample())
-        return pixels;
-
-    const auto duration = player.duration();
-    if (duration <= 0 || !player.isSeekable())
-        return pixels;
-
-    for (int i = 1; i < k_videoSamples; ++i) {
-        player.setPosition(duration * i / k_videoSamples);
-        if (!sample())
-            break;
-    }
-
-    player.stop();
-    return pixels;
-}
-
 QList<m3colours::Argb> coloursForFile(const QString& path) {
     if (QMimeDatabase().mimeTypeForFile(path).name().startsWith(u"video/"_s))
-        return coloursForPixels(videoPixels(path));
+        return coloursForPixels(videoPixels(path, k_videoSamples, pixelsPerFrame(k_videoSamples)));
 
     QImageReader reader(path);
     if (!reader.canRead())
