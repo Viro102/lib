@@ -237,7 +237,7 @@ QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Schem
             [name, flavour, mode](const QString& p) {
                 return parseScheme(p, name, flavour, mode);
             })
-        .onFailed([name, flavour, mode]() {
+        .onFailed([name, flavour, mode] {
             const auto customPath =
                 config::ConfigPaths::customSchemesDir() + u"/%1/%2/%3.txt"_s.arg(name, flavour, toString(mode));
             return parseScheme(customPath, name, flavour, mode);

@@ -119,6 +119,8 @@ m3colours::scheme::DynamicScheme schemeForVariant(Variant variant, Argb sourceCo
     case Variant::Cmf:
         return SchemeCmf(hct, isDark, 0.0);
     }
+
+    Q_UNREACHABLE();
 }
 
 Argb darken(Argb colour, qreal amount) {
