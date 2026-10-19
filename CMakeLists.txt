@@ -43,7 +43,7 @@ endif()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Sql)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Network Sql)
 
 add_library(caelestia-headers INTERFACE)
 target_include_directories(caelestia-headers INTERFACE
@@ -55,6 +55,7 @@ add_subdirectory(src/config)
 add_subdirectory(src/utils)
 add_subdirectory(src/media)
 add_subdirectory(src/scheme)
+add_subdirectory(src/theme)
 
 add_library(caelestia SHARED)
 set_target_properties(caelestia PROPERTIES
@@ -73,6 +74,7 @@ target_link_libraries(caelestia
         caelestia-config
         caelestia-media
         caelestia-scheme
+        caelestia-theme
         caelestia-utils
 )
 

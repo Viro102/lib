@@ -1,0 +1,53 @@
+# NVTOP Color Configuration Template
+# Format: color_name = RGB_HEX_VALUE
+# Colors must be specified as 6-digit hex values without # prefix
+
+# Background colors
+background = #{{ surface.hex }}
+selected_bg = #{{ surfaceContainer.hex }}
+header_bg = #{{ surfaceContainerHighest.hex }}
+
+# Text colors
+text = #{{ onSurface.hex }}
+selected_text = #{{ primary.hex }}
+header_text = #{{ onSurfaceVariant.hex }}
+inactive_text = #{{ outline.hex }}
+
+# GPU utilization colors (gradient from low to high)
+gpu_util_low = #{{ green.hex }}
+gpu_util_med = #{{ yellow.hex }}
+gpu_util_high = #{{ red.hex }}
+
+# Memory usage colors
+memory_low = #{{ teal.hex }}
+memory_med = #{{ sapphire.hex }}
+memory_high = #{{ blue.hex }}
+
+# Temperature colors (cool to hot)
+temp_cool = #{{ green.hex }}
+temp_warm = #{{ yellow.hex }}
+temp_hot = #{{ red.hex }}
+
+# Power usage colors
+power_low = #{{ green.hex }}
+power_med = #{{ peach.hex }}
+power_high = #{{ maroon.hex }}
+
+# Process list colors
+process_normal = #{{ onSurface.hex }}
+process_highlight = #{{ primary.hex }}
+process_killed = #{{ red.hex }}
+
+# Border and separator colors
+border = #{{ outline.hex }}
+separator = #{{ outlineVariant.hex }}
+
+# Chart and graph colors
+chart_line = #{{ tertiary.hex }}
+chart_fill = #{{ surfaceContainer.hex }}
+
+# Status indicators
+status_ok = #{{ green.hex }}
+status_warning = #{{ yellow.hex }}
+status_error = #{{ red.hex }}
+status_info = #{{ blue.hex }}

@@ -1,0 +1,149 @@
+[ColorEffects:Disabled]
+Color=#{{ surfaceContainer.hex }}
+ColorAmount=0.5
+ColorEffect=3
+ContrastAmount=0
+ContrastEffect=0
+IntensityAmount=0
+IntensityEffect=0
+
+[ColorEffects:Inactive]
+ChangeSelectionColor=true
+Color=#{{ surfaceContainerLowest.hex }}
+ColorAmount=0.025
+ColorEffect=0
+ContrastAmount=0.1
+ContrastEffect=0
+Enable={{ mode ? dark=true | false }}
+IntensityAmount=0
+IntensityEffect=0
+
+[Colors:Button]
+BackgroundAlternate=#{{ surfaceContainerHighest.hex }}
+BackgroundNormal=#{{ surfaceContainerHigh.hex }}
+DecorationFocus=#{{ primary.hex }}
+DecorationHover=#{{ primary.hex }}
+ForegroundActive=#{{ onSurface.hex }}
+ForegroundInactive=#{{ outline.hex }}
+ForegroundLink=#{{ klink.hex }}
+ForegroundNegative=#{{ knegative.hex }}
+ForegroundNeutral=#{{ kneutral.hex }}
+ForegroundNormal=#{{ onSurface.hex }}
+ForegroundPositive=#{{ kpositive.hex }}
+ForegroundVisited=#{{ kvisited.hex }}
+
+[Colors:Complementary]
+BackgroundAlternate=#{{ surface.hex }}
+BackgroundNormal=#{{ surfaceContainer.hex }}
+DecorationFocus=#{{ primary.hex }}
+DecorationHover=#{{ primary.hex }}
+ForegroundActive=#{{ inverseSurface.hex }}
+ForegroundInactive=#{{ outline.hex }}
+ForegroundLink=#{{ klink.hex }}
+ForegroundNegative=#{{ knegative.hex }}
+ForegroundNeutral=#{{ kneutral.hex }}
+ForegroundNormal=#{{ onSurfaceVariant.hex }}
+ForegroundPositive=#{{ kpositive.hex }}
+ForegroundVisited=#{{ kvisited.hex }}
+
+[Colors:Header]
+BackgroundAlternate=#{{ surfaceContainer.hex }}
+BackgroundNormal=#{{ surfaceContainer.hex }}
+DecorationFocus=#{{ primary.hex }}
+DecorationHover=#{{ primary.hex }}
+ForegroundActive=#{{ inverseSurface.hex }}
+ForegroundInactive=#{{ outline.hex }}
+ForegroundLink=#{{ klink.hex }}
+ForegroundNegative=#{{ knegative.hex }}
+ForegroundNeutral=#{{ kneutral.hex }}
+ForegroundNormal=#{{ onSurfaceVariant.hex }}
+ForegroundPositive=#{{ kpositive.hex }}
+ForegroundVisited=#{{ kvisited.hex }}
+
+[Colors:Header][Inactive]
+BackgroundAlternate=#{{ surfaceContainer.hex }}
+BackgroundNormal=#{{ surfaceContainer.hex }}
+DecorationFocus=#{{ primary.hex }}
+DecorationHover=#{{ primary.hex }}
+ForegroundActive=#{{ inverseSurface.hex }}
+ForegroundInactive=#{{ outline.hex }}
+ForegroundLink=#{{ klink.hex }}
+ForegroundNegative=#{{ knegative.hex }}
+ForegroundNeutral=#{{ kneutral.hex }}
+ForegroundNormal=#{{ onSurfaceVariant.hex }}
+ForegroundPositive=#{{ kpositive.hex }}
+ForegroundVisited=#{{ kvisited.hex }}
+
+[Colors:Selection]
+BackgroundAlternate=#{{ primary.hex }}
+BackgroundNormal=#{{ primary.hex }}
+DecorationFocus=#{{ primary.hex }}
+DecorationHover=#{{ secondary.hex }}
+ForegroundActive=#{{ onPrimary.hex }}
+ForegroundInactive=#{{ onPrimary.hex }}
+ForegroundLink=#{{ klinkSelection.hex }}
+ForegroundNegative=#{{ knegativeSelection.hex }}
+ForegroundNeutral=#{{ kneutralSelection.hex }}
+ForegroundNormal=#{{ onPrimary.hex }}
+ForegroundPositive=#{{ kpositiveSelection.hex }}
+ForegroundVisited=#{{ kvisitedSelection.hex }}
+
+[Colors:Tooltip]
+BackgroundAlternate=#{{ surfaceContainerHighest.hex }}
+BackgroundNormal=#{{ surfaceContainer.hex }}
+DecorationFocus=#{{ primary.hex }}
+DecorationHover=#{{ primary.hex }}
+ForegroundActive=#{{ onSurface.hex }}
+ForegroundInactive=#{{ outline.hex }}
+ForegroundLink=#{{ klink.hex }}
+ForegroundNegative=#{{ knegative.hex }}
+ForegroundNeutral=#{{ kneutral.hex }}
+ForegroundNormal=#{{ onSurface.hex }}
+ForegroundPositive=#{{ kpositive.hex }}
+ForegroundVisited=#{{ kvisited.hex }}
+
+[Colors:View]
+BackgroundAlternate=#{{ surfaceContainer.hex }}
+BackgroundNormal=#{{ mode ? dark=surfaceDim.hex | surfaceBright.hex }}
+DecorationFocus=#{{ primary.hex }}
+#-----------------------------------------------
+DecorationHover=#{{ mode ? dark=inversePrimary.hex | secondaryFixed.hex }}
+ForegroundActive=#{{ inverseSurface.hex }}
+ForegroundInactive=#{{ outline.hex }}
+ForegroundLink=#{{ klink.hex }}
+ForegroundNegative=#{{ knegative.hex }}
+ForegroundNeutral=#{{ kneutral.hex }}
+ForegroundNormal=#{{ onSurface.hex }}
+ForegroundPositive=#{{ kpositive.hex }}
+ForegroundVisited=#{{ kvisited.hex }}
+
+[Colors:Window]
+BackgroundAlternate=#{{ surfaceContainerHighest.hex }}
+BackgroundNormal=#{{ surfaceContainer.hex }}
+DecorationFocus=#{{ primary.hex }}
+DecorationHover=#{{ primary.hex }}
+ForegroundActive=#{{ klink.hex }}
+ForegroundInactive=#{{ outline.hex }}
+ForegroundLink=#{{ klink.hex }}
+ForegroundNegative=#{{ knegative.hex }}
+ForegroundNeutral=#{{ kneutral.hex }}
+#--- Window titles, context icons
+ForegroundNormal=#{{ onSurfaceVariant.hex }}
+ForegroundPositive=#{{ kpositive.hex }}
+ForegroundVisited=#{{ kvisited.hex }}
+
+[General]
+ColorScheme=Caelestia
+Name=Caelestia
+shadeSortColumn=true
+
+[KDE]
+contrast=4
+
+[WM]
+activeBackground=#{{ surfaceContainerHighest.hex }}
+activeBlend={{ mode ? dark=252,252,252 | 227,229,231 }}
+activeForeground=#{{ onSurface.hex }}
+inactiveBackground=#{{ secondaryContainer.hex }}
+inactiveBlend={{ mode ? dark=161,169,177 | 239,240,241 }}
+inactiveForeground=#{{ mode ? dark=onSecondaryContainer.hex | onSurfaceVariant.hex }}

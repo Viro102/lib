@@ -1,0 +1,162 @@
+{
+  "$schema": "https://github.com/longbridge/gpui-component/raw/refs/heads/main/.theme-schema.json",
+  "name": "Caelestia",
+  "author": "Unrectified",
+  "url": "https://github.com/caelestia-dots/cli",
+  "themes": [
+    {
+      "name": "Caelestia",
+      "mode": "{{ mode }}",
+      "colors": {
+        "accent.background": "#{{ surfaceContainerHigh.hex }}",
+        "accent.foreground": "#{{ onSurface.hex }}",
+        "background": "#{{ background.hex }}",
+        "border": "#{{ outlineVariant.hex }}",
+        "danger.background": "#{{ error.hex }}",
+        "foreground": "#{{ onBackground.hex }}",
+        "input.border": "#{{ outline.hex }}",
+        "link.active.foreground": "#{{ primary.hex }}",
+        "link.foreground": "#{{ primary.hex }}",
+        "link.hover.foreground": "#{{ primaryFixed.hex }}",
+        "list.active.background": "#{{ secondaryContainer.hex }}",
+        "list.active.border": "#{{ secondary.hex }}",
+        "list.even.background": "#{{ surfaceContainerLowest.hex }}",
+        "muted.background": "#{{ surfaceContainerHighest.hex }}",
+        "muted.foreground": "#{{ onSurfaceVariant.hex }}",
+        "panel.background": "#{{ surfaceContainer.hex }}",
+        "popover.background": "#{{ surfaceContainerHigh.hex }}",
+        "popover.foreground": "#{{ onSurface.hex }}",
+        "primary.active.background": "#{{ primaryFixedDim.hex }}",
+        "primary.background": "#{{ primary.hex }}",
+        "primary.foreground": "#{{ onPrimary.hex }}",
+        "primary.hover.background": "#{{ primaryFixed.hex }}",
+        "scrollbar.background": "#{{ surface.hex }}",
+        "scrollbar.thumb.background": "#{{ outline.hex }}",
+        "secondary.background": "#{{ secondaryContainer.hex }}",
+        "secondary.active.background": "#{{ secondaryFixedDim.hex }}",
+        "secondary.foreground": "#{{ onSecondary.hex }}",
+        "secondary.hover.background": "#{{ secondaryFixed.hex }}",
+        "tab.active.background": "#{{ surface.hex }}",
+        "tab.active.foreground": "#{{ onSurface.hex }}",
+        "tab.background": "#{{ surfaceContainerLowest.hex }}",
+        "tab.foreground": "#{{ onSurfaceVariant.hex }}",
+        "tab_bar.background": "#{{ surface.hex }}",
+        "table.background": "#{{ surfaceContainer.hex }}",
+        "table.head.foreground": "#{{ onSurfaceVariant.hex }}",
+        "table.row.border": "#{{ outlineVariant.hex }}",
+        "title_bar.background": "#{{ surfaceDim.hex }}",
+        "ring": "#{{ primary.hex }}",
+        "base.red": "#{{ red.hex }}",
+        "base.red.light": "#{{ peach.hex }}",
+        "base.green": "#{{ green.hex }}",
+        "base.green.light": "#{{ teal.hex }}",
+        "base.blue": "#{{ blue.hex }}",
+        "base.blue.light": "#{{ sky.hex }}",
+        "base.cyan": "#{{ teal.hex }}",
+        "base.cyan.light": "#{{ sky.hex }}",
+        "base.magenta": "#{{ mauve.hex }}",
+        "base.magenta.light": "#{{ pink.hex }}",
+        "base.yellow": "#{{ yellow.hex }}",
+        "base.yellow.light": "#{{ peach.hex }}"
+      },
+      "highlight": {
+        "editor.foreground": "#{{ onSurface.hex }}",
+        "editor.background": "#{{ surface.hex }}",
+        "editor.active_line.background": "#{{ surfaceContainerLow.hex }}",
+        "editor.line_number": "#{{ onSurfaceVariant.hex }}",
+        "editor.active_line_number": "#{{ onSurface.hex }}",
+        "editor.invisible": "#{{ outlineVariant.hex }}",
+        "conflict": "#{{ red.hex }}",
+        "created": "#{{ green.hex }}",
+        "deleted": "#{{ red.hex }}",
+        "error": "#{{ error.hex }}",
+        "hidden": "#{{ outline.hex }}",
+        "hint": "#{{ success.hex }}",
+        "ignored": "#{{ outline.hex }}",
+        "info": "#{{ blue.hex }}",
+        "modified": "#{{ yellow.hex }}",
+        "predictive": "#{{ outlineVariant.hex }}",
+        "renamed": "#{{ green.hex }}",
+        "success": "#{{ success.hex }}",
+        "unreachable": "#{{ outlineVariant.hex }}",
+        "warning": "#{{ yellow.hex }}",
+        "syntax": {
+          "attribute": {
+            "color": "#{{ yellow.hex }}"
+          },
+          "boolean": {
+            "color": "#{{ green.hex }}"
+          },
+          "comment": {
+            "color": "#{{ outline.hex }}",
+            "font_style": "italic"
+          },
+          "comment.doc": {
+            "color": "#{{ outline.hex }}",
+            "font_style": "italic"
+          },
+          "constant": {
+            "color": "#{{ red.hex }}"
+          },
+          "constructor": {
+            "color": "#{{ yellow.hex }}"
+          },
+          "embedded": {
+            "color": "#{{ onSurface.hex }}"
+          },
+          "function": {
+            "color": "#{{ green.hex }}"
+          },
+          "keyword": {
+            "color": "#{{ mauve.hex }}"
+          },
+          "link_text": {
+            "color": "#{{ sky.hex }}",
+            "font_style": "normal"
+          },
+          "link_uri": {
+            "color": "#{{ klink.hex }}",
+            "font_style": "italic"
+          },
+          "number": {
+            "color": "#{{ red.hex }}"
+          },
+          "string": {
+            "color": "#{{ green.hex }}"
+          },
+          "string.escape": {
+            "color": "#{{ green.hex }}"
+          },
+          "string.regex": {
+            "color": "#{{ green.hex }}"
+          },
+          "string.special": {
+            "color": "#{{ yellow.hex }}"
+          },
+          "string.special.symbol": {
+            "color": "#{{ yellow.hex }}"
+          },
+          "tag": {
+            "color": "#{{ yellow.hex }}"
+          },
+          "text.literal": {
+            "color": "#{{ red.hex }}"
+          },
+          "title": {
+            "color": "#{{ sky.hex }}",
+            "font_weight": 600
+          },
+          "type": {
+            "color": "#{{ yellow.hex }}"
+          },
+          "property": {
+            "color": "#{{ onSurface.hex }}"
+          },
+          "variable.special": {
+            "color": "#{{ red.hex }}"
+          }
+        }
+      }
+    }
+  ]
+}
