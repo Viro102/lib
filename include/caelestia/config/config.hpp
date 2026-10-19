@@ -7,6 +7,7 @@
 
 #include "caelestia/config/apps.hpp"
 #include "caelestia/config/paths.hpp"
+#include "caelestia/config/theme.hpp"
 
 namespace caelestia::config {
 
@@ -28,6 +29,7 @@ public:
     // Config options
     [[nodiscard]] ConfigApps apps() const;
     [[nodiscard]] ConfigPaths paths() const;
+    [[nodiscard]] const ConfigTheme& theme() const;
 
 private:
     explicit Config();
@@ -38,6 +40,7 @@ private:
 
     ConfigApps const m_apps;
     ConfigPaths const m_paths;
+    ConfigTheme const m_theme;
 };
 
 } // namespace caelestia::config

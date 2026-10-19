@@ -43,8 +43,13 @@ QString Config::configPath() {
 
 Config::Config()
     : m_apps(this)
-    , m_paths(this) {
+    , m_paths(this)
+    , m_theme(this) {
     reload();
+}
+
+const ConfigTheme& Config::theme() const {
+    return m_theme;
 }
 
 QJsonObject Config::root() const {
