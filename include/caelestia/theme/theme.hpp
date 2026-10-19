@@ -27,6 +27,7 @@ private:
     void writeTemplate(const QString& name, const QString& path) const;
 
     void applySync() const;
+    void applyTargets() const;
     void applyCustom() const;
     void runPostHook(const QString& hook) const;
 

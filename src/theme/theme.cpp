@@ -1,6 +1,7 @@
 #include "caelestia/theme/theme.hpp"
 
 #include <qcolor.h>
+#include <qdatastream.h>
 #include <qdir.h>
 #include <qfile.h>
 #include <qhash.h>
@@ -10,6 +11,7 @@
 #include <qlockfile.h>
 #include <qprocess.h>
 #include <qregularexpression.h>
+#include <qsavefile.h>
 
 #include <algorithm>
 #include <array>
@@ -108,6 +110,50 @@ QString defaultIconTheme(scheme::Scheme::Mode mode) {
     return mode == scheme::Scheme::Mode::Dark ? cfg.iconThemeDark() : cfg.iconThemeLight();
 }
 
+QString schemeStatePath() {
+    return config::ConfigPaths::stateDir() + u"/scheme.bin"_s;
+}
+
+bool saveSchemeState(const scheme::Scheme& scheme) {
+    QSaveFile file(schemeStatePath());
+    if (!file.open(QIODevice::WriteOnly)) {
+        qCWarning(lcTheme) << "Unable to open" << file.fileName() << file.errorString();
+        return false;
+    }
+
+    QDataStream out(&file);
+    out << scheme.name << scheme.flavour << scheme.mode << scheme::coloursToBytes(scheme.colours);
+    if (!file.commit()) {
+        qCWarning(lcTheme) << "Unable to write" << file.fileName() << file.errorString();
+        return false;
+    }
+    return true;
+}
+
+std::optional<scheme::Scheme> loadSchemeState() {
+    QFile file(schemeStatePath());
+    if (!file.open(QIODevice::ReadOnly)) {
+        qCWarning(lcTheme) << "Unable to open" << file.fileName() << file.errorString();
+        return std::nullopt;
+    }
+
+    QString name;
+    QString flavour;
+    scheme::Scheme::Mode mode;
+    QByteArray colours;
+    QDataStream in(&file);
+    in >> name >> flavour >> mode >> colours;
+    if (in.status() != QDataStream::Ok) {
+        qCWarning(lcTheme) << "Unable to read" << file.fileName();
+        return std::nullopt;
+    }
+
+    const auto parsed = scheme::coloursFromBytes(colours);
+    if (!parsed)
+        return std::nullopt;
+    return scheme::Scheme{ .name = name, .flavour = flavour, .mode = mode, .colours = *parsed };
+}
+
 } // namespace
 
 Theme::Theme(scheme::Scheme scheme)
@@ -167,6 +213,22 @@ void Theme::writeTemplate(const QString& name, const QString& path) const {
 }
 
 void Theme::applySync() const {
+    QDir().mkpath(config::ConfigPaths::stateDir());
+    const bool saved = saveSchemeState(m_scheme);
+
+    QLockFile lock(config::ConfigPaths::stateDir() + u"/theme.lock"_s);
+    lock.lock();
+
+    if (saved) {
+        if (auto latest = loadSchemeState()) {
+            Theme(std::move(*latest)).applyTargets();
+            return;
+        }
+    }
+    applyTargets();
+}
+
+void Theme::applyTargets() const {
     struct Target {
         QStringView name;
         void (Theme::*apply)() const;
@@ -189,13 +251,6 @@ void Theme::applySync() const {
         Target{ .name = u"zed", .apply = &Theme::applyZed },
         Target{ .name = u"cava", .apply = &Theme::applyCava },
     };
-
-    QDir().mkpath(config::ConfigPaths::stateDir());
-    QLockFile lock(config::ConfigPaths::stateDir() + u"/theme.lock"_s);
-    if (!lock.tryLock(0)) {
-        qCDebug(lcTheme) << "Theme application already in progress, skipping";
-        return;
-    }
 
     const auto& cfg = config::Config::instance().theme();
     for (const auto& target : k_targets) {

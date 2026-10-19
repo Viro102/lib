@@ -59,6 +59,8 @@ QString toString(m3colours::scheme::Variant flavour) {
     Q_UNREACHABLE_RETURN(QString());
 }
 
+} // namespace
+
 static_assert(std::is_trivially_copyable_v<SchemeColours>);
 
 std::optional<SchemeColours> coloursFromBytes(const QByteArray& bytes) {
@@ -75,6 +77,8 @@ std::optional<SchemeColours> coloursFromBytes(const QByteArray& bytes) {
 QByteArray coloursToBytes(const SchemeColours& colours) {
     return { reinterpret_cast<const char*>(&colours), sizeof(colours) };
 }
+
+namespace {
 
 m3colours::Argb sourceColour(const QList<m3colours::Argb>& colours) {
     if (colours.isEmpty())

@@ -1,11 +1,14 @@
 #pragma once
 
+#include <qbytearray.h>
 #include <qfuture.h>
 #include <qimage.h>
 #include <qlist.h>
 #include <qstring.h>
 
 #include <m3colours/scheme.hpp>
+
+#include <optional>
 
 namespace caelestia::scheme {
 
@@ -134,6 +137,8 @@ struct NamedColour {
 };
 
 QList<NamedColour> namedColours(const SchemeColours& colours);
+[[nodiscard]] std::optional<SchemeColours> coloursFromBytes(const QByteArray& bytes);
+[[nodiscard]] QByteArray coloursToBytes(const SchemeColours& colours);
 QString modeName(Scheme::Mode mode);
 
 QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Scheme::Mode mode);
