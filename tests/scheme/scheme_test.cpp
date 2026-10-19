@@ -1,4 +1,6 @@
+#include <qdir.h>
 #include <qdiriterator.h>
+#include <qfile.h>
 #include <qfileinfo.h>
 #include <qimage.h>
 #include <qtemporarydir.h>
@@ -8,6 +10,7 @@
 #include <bit>
 #include <stdexcept>
 
+#include "caelestia/config/paths.hpp"
 #include "caelestia/scheme/scheme.hpp"
 #include "generator.hpp"
 
@@ -34,11 +37,18 @@ private:
     QImage m_image;
     QString m_path;
 
+    void installCustomScheme(const QString& source, const QString& name, const QString& flavour) {
+        const auto dir = caelestia::config::ConfigPaths::customSchemesDir() + u"/%1/%2"_s.arg(name, flavour);
+        QVERIFY(QDir().mkpath(dir));
+        QVERIFY(QFile::copy(source, dir + u"/dark.txt"_s));
+    }
+
 private slots:
 
     void initTestCase() {
         QVERIFY(m_root.isValid());
         qputenv("XDG_CACHE_HOME", m_root.path().toUtf8());
+        qputenv("XDG_CONFIG_HOME", m_root.path().toUtf8());
 
         m_image = QImage(8, 8, QImage::Format_RGB32);
         m_image.fill(k_sourceColour.value());
@@ -86,6 +96,28 @@ private slots:
     void missingStaticSchemeThrows() {
         const auto future = schemeForName(u"missing"_s, u"default"_s, Scheme::Mode::Dark);
         QVERIFY_THROWS_EXCEPTION(std::invalid_argument, future.result());
+    }
+
+    void customSchemeLoads() {
+        installCustomScheme(u":/schemes/dracula/medium/dark.txt"_s, u"mine"_s, u"custom"_s);
+        const auto custom = schemeForName(u"mine"_s, u"custom"_s, Scheme::Mode::Dark).result();
+        const auto bundled = schemeForName(u"dracula"_s, u"medium"_s, Scheme::Mode::Dark).result();
+        QCOMPARE(custom.name, u"mine"_s);
+        QCOMPARE(custom.flavour, u"custom"_s);
+        QCOMPARE(custom.mode, Scheme::Mode::Dark);
+        QCOMPARE(allColours(custom.colours), allColours(bundled.colours));
+    }
+
+    void customSchemeMissingModeThrows() {
+        installCustomScheme(u":/schemes/dracula/medium/dark.txt"_s, u"darkonly"_s, u"custom"_s);
+        const auto future = schemeForName(u"darkonly"_s, u"custom"_s, Scheme::Mode::Light);
+        QVERIFY_THROWS_EXCEPTION(std::invalid_argument, future.result());
+    }
+
+    void bundledSchemeShadowsCustom() {
+        installCustomScheme(u":/schemes/dracula/medium/dark.txt"_s, u"caelestia"_s, u"default"_s);
+        const auto scheme = schemeForName(u"caelestia"_s, u"default"_s, Scheme::Mode::Dark).result();
+        QCOMPARE(scheme.colours.background, Argb(0xFF0A0F0F));
     }
 
     void schemeFromImage() {

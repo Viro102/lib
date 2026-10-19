@@ -13,6 +13,7 @@ add_library(caelestia-scheme OBJECT
 target_link_libraries(caelestia-scheme
     PUBLIC
         caelestia-headers
+        caelestia-config
         caelestia-utils
         m3colours::m3colours
         Qt::Core

@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <type_traits>
 
+#include "caelestia/config/paths.hpp"
 #include "generator.hpp"
 #include "schemecache.hpp"
 
@@ -106,7 +107,7 @@ QHash<QString, m3colours::Argb> parseColours(QIODevice& device) {
 Scheme parseScheme(const QString& path, const QString& name, const QString& flavour, Scheme::Mode mode) {
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        throw std::invalid_argument("No such scheme: " + path.toStdString());
+        throw std::invalid_argument(u"No such scheme: %1-%2-%3"_s.arg(name, flavour, toString(mode)).toStdString());
 
     const auto map = parseColours(file);
     const auto colours = [&](QStringView key) {
@@ -230,9 +231,16 @@ Scheme parseScheme(const QString& path, const QString& name, const QString& flav
 
 QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Scheme::Mode mode) {
     const auto path = u":/schemes/%1/%2/%3.txt"_s.arg(name, flavour, toString(mode));
-    return QtFuture::makeReadyValueFuture(path).then(QtFuture::Launch::Async, [name, flavour, mode](const QString& p) {
-        return parseScheme(p, name, flavour, mode);
-    });
+    return QtFuture::makeReadyValueFuture(path)
+        .then(QtFuture::Launch::Async,
+            [name, flavour, mode](const QString& p) {
+                return parseScheme(p, name, flavour, mode);
+            })
+        .onFailed([name, flavour, mode]() {
+            const auto customPath =
+                config::ConfigPaths::customSchemesDir() + u"/%1/%2/%3.txt"_s.arg(name, flavour, toString(mode));
+            return parseScheme(customPath, name, flavour, mode);
+        });
 }
 
 Scheme schemeForImage(const QImage& image, m3colours::scheme::Variant flavour, Scheme::Mode mode) {
