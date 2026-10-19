@@ -69,6 +69,7 @@ target_link_libraries(caelestia
         Qt::Core
     PRIVATE
         caelestia-config
+        caelestia-scheme
         caelestia-utils
 )
 
