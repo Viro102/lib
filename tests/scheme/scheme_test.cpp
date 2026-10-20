@@ -12,8 +12,8 @@
 #include <utility>
 
 #include "caelestia/config/paths.hpp"
+#include "caelestia/scheme/generator.hpp"
 #include "caelestia/scheme/scheme.hpp"
-#include "generator.hpp"
 #include "helpers.hpp"
 #include "schemecache.hpp"
 
@@ -161,7 +161,7 @@ private slots:
     }
 
     void namedColoursMatchStruct() {
-        const auto colours = gen::genScheme(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark);
+        const auto colours = generate(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark);
         const auto named = namedColours(colours);
         const auto all = allColours(colours);
         QCOMPARE(named.size(), static_cast<qsizetype>(all.size()));
@@ -184,16 +184,16 @@ private slots:
         QCOMPARE(scheme.name, u"dynamic"_s);
         QCOMPARE(scheme.flavour, u"tonalspot"_s);
         QCOMPARE(scheme.mode, Scheme::Mode::Dark);
-        QCOMPARE(allColours(scheme.colours),
-            allColours(gen::genScheme(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark)));
+        QCOMPARE(
+            allColours(scheme.colours), allColours(generate(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark)));
     }
 
     void schemeFromImageLightMode() {
         const auto scheme = schemeForImage(m_image, Variant::Vibrant, Scheme::Mode::Light);
         QCOMPARE(scheme.flavour, u"vibrant"_s);
         QCOMPARE(scheme.mode, Scheme::Mode::Light);
-        QCOMPARE(allColours(scheme.colours),
-            allColours(gen::genScheme(k_sourceColour, Variant::Vibrant, Scheme::Mode::Light)));
+        QCOMPARE(
+            allColours(scheme.colours), allColours(generate(k_sourceColour, Variant::Vibrant, Scheme::Mode::Light)));
     }
 
     void schemeFromPath() {
@@ -201,8 +201,8 @@ private slots:
         QCOMPARE(scheme.name, u"dynamic"_s);
         QCOMPARE(scheme.flavour, u"tonalspot"_s);
         QCOMPARE(scheme.mode, Scheme::Mode::Dark);
-        QCOMPARE(allColours(scheme.colours),
-            allColours(gen::genScheme(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark)));
+        QCOMPARE(
+            allColours(scheme.colours), allColours(generate(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark)));
     }
 
     void schemeFromPathMatchesImage() {
@@ -217,14 +217,14 @@ private slots:
     void schemeFromPathUsesCache() {
         constexpr auto k_variant = Variant::FruitSalad;
         constexpr auto k_mode = Scheme::Mode::Dark;
-        const auto seeded = gen::genScheme(Argb(0xFFFF0000), Variant::Vibrant, Scheme::Mode::Light);
+        const auto seeded = generate(Argb(0xFFFF0000), Variant::Vibrant, Scheme::Mode::Light);
         const auto key = SchemeCache::keyFor(k_sourceColour, k_variant, k_mode);
         SchemeCache::instance().store(key, toBytes(seeded));
         QCOMPARE(SchemeCache::instance().lookup(key).result(), toBytes(seeded));
 
         const auto scheme = schemeForPath(m_path, k_variant, k_mode).result();
         QCOMPARE(allColours(scheme.colours), allColours(seeded));
-        QVERIFY(allColours(scheme.colours) != allColours(gen::genScheme(k_sourceColour, k_variant, k_mode)));
+        QVERIFY(allColours(scheme.colours) != allColours(generate(k_sourceColour, k_variant, k_mode)));
     }
 
     void schemeFromPathIgnoresWrongSizedCache() {
@@ -236,20 +236,20 @@ private slots:
         QCOMPARE(SchemeCache::instance().lookup(key).result(), bad);
 
         const auto scheme = schemeForPath(m_path, k_variant, k_mode).result();
-        QCOMPARE(allColours(scheme.colours), allColours(gen::genScheme(k_sourceColour, k_variant, k_mode)));
+        QCOMPARE(allColours(scheme.colours), allColours(generate(k_sourceColour, k_variant, k_mode)));
     }
 
     void schemeFromNullImageUsesFallback() {
         const auto scheme = schemeForImage(QImage(), Variant::TonalSpot, Scheme::Mode::Dark);
-        QCOMPARE(allColours(scheme.colours),
-            allColours(gen::genScheme(k_fallbackColour, Variant::TonalSpot, Scheme::Mode::Dark)));
+        QCOMPARE(
+            allColours(scheme.colours), allColours(generate(k_fallbackColour, Variant::TonalSpot, Scheme::Mode::Dark)));
     }
 
     void schemeFromMissingPathUsesFallback() {
         const auto scheme =
             schemeForPath(m_root.filePath(u"missing.png"_s), Variant::TonalSpot, Scheme::Mode::Dark).result();
-        QCOMPARE(allColours(scheme.colours),
-            allColours(gen::genScheme(k_fallbackColour, Variant::TonalSpot, Scheme::Mode::Dark)));
+        QCOMPARE(
+            allColours(scheme.colours), allColours(generate(k_fallbackColour, Variant::TonalSpot, Scheme::Mode::Dark)));
     }
 };
 

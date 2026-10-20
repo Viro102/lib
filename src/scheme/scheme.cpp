@@ -17,8 +17,8 @@
 
 #include "caelestia/config/paths.hpp"
 #include "caelestia/media/analysis.hpp"
+#include "caelestia/scheme/generator.hpp"
 #include "colournames.hpp"
-#include "generator.hpp"
 #include "schemecache.hpp"
 
 namespace caelestia::scheme {
@@ -156,7 +156,7 @@ Scheme schemeForImage(const QImage& image, m3colours::scheme::Variant flavour, S
         .name = u"dynamic"_s,
         .flavour = toString(flavour),
         .mode = mode,
-        .colours = gen::genScheme(sourceColour(colours), flavour, mode),
+        .colours = generate(sourceColour(colours), flavour, mode),
     };
 }
 
@@ -172,7 +172,7 @@ QFuture<Scheme> schemeForPath(const QString& path, m3colours::scheme::Variant fl
                 return { .name = u"dynamic"_s, .flavour = toString(flavour), .mode = mode, .colours = *cached };
         }
 
-        const auto gen = gen::genScheme(best, flavour, mode);
+        const auto gen = generate(best, flavour, mode);
         SchemeCache::instance().store(SchemeCache::keyFor(best, flavour, mode), coloursToBytes(gen));
 
         return { .name = u"dynamic"_s, .flavour = toString(flavour), .mode = mode, .colours = gen };

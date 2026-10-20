@@ -1,4 +1,4 @@
-#include "generator.hpp"
+#include "caelestia/scheme/generator.hpp"
 
 #include <m3colours/blend.hpp>
 #include <m3colours/quantise.hpp>
@@ -6,7 +6,7 @@
 
 #include <array>
 
-namespace caelestia::scheme::gen {
+namespace caelestia::scheme {
 
 namespace {
 
@@ -165,7 +165,7 @@ Argb adjusted(Argb colour, Argb blendColour, Variant flavour, Scheme::Mode mode,
 
 } // namespace
 
-SchemeColours genScheme(Argb sourceColour, Variant flavour, Scheme::Mode mode) {
+SchemeColours generate(Argb sourceColour, Variant flavour, Scheme::Mode mode) {
     const auto isDark = mode == Scheme::Mode::Dark;
     const auto scheme = schemeForVariant(flavour, sourceColour, isDark);
     const auto paletteColour = scheme.primaryPaletteKeyColour();
@@ -286,4 +286,4 @@ SchemeColours genScheme(Argb sourceColour, Variant flavour, Scheme::Mode mode) {
 #undef K_COLOUR
 }
 
-} // namespace caelestia::scheme::gen
+} // namespace caelestia::scheme
