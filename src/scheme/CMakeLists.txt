@@ -1,4 +1,6 @@
 add_library(caelestia-scheme OBJECT
+    dynamicscheme.cpp
+    filescheme.cpp
     generator.cpp
     scheme.cpp
 )

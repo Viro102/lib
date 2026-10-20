@@ -15,7 +15,7 @@ namespace caelestia::theme {
 
 class Theme {
 public:
-    explicit Theme(scheme::Scheme scheme);
+    explicit Theme(scheme::SchemeData scheme);
 
     [[nodiscard]] QFuture<void> apply() const;
 
@@ -24,7 +24,7 @@ private:
     friend class ::TestTheme;
 #endif
 
-    scheme::Scheme m_scheme;
+    scheme::SchemeData m_scheme;
     QString m_iconTheme;
 
     [[nodiscard]] QString sequences() const;
@@ -32,8 +32,8 @@ private:
     [[nodiscard]] QString renderTemplate(const QString& name) const;
     void writeTemplate(const QString& name, const QString& path) const;
 
-    [[nodiscard]] static bool saveState(const scheme::Scheme& scheme);
-    [[nodiscard]] static std::optional<scheme::Scheme> loadState();
+    [[nodiscard]] static bool saveState(const scheme::SchemeData& scheme);
+    [[nodiscard]] static std::optional<scheme::SchemeData> loadState();
 
     void applySync() const;
     void applyTargets() const;

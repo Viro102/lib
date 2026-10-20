@@ -135,8 +135,8 @@ Argb lighten(Argb colour, qreal amount) {
     return Hct(hct.hue(), hct.chroma() + diff / 5, hct.tone() + diff).toArgb();
 }
 
-Argb grayscale(Argb colour, Scheme::Mode mode) {
-    Hct hct(mode == Scheme::Mode::Light ? darken(colour, 0.35) : lighten(colour, 0.65));
+Argb grayscale(Argb colour, Mode mode) {
+    Hct hct(mode == Mode::Light ? darken(colour, 0.35) : lighten(colour, 0.65));
     hct.setChroma(0.0);
     return hct.toArgb();
 }
@@ -150,7 +150,7 @@ Argb adjustNeutral(Argb colour, Variant flavour) {
     return hct.toArgb();
 }
 
-Argb adjusted(Argb colour, Argb blendColour, Variant flavour, Scheme::Mode mode, qreal toneBoost) {
+Argb adjusted(Argb colour, Argb blendColour, Variant flavour, Mode mode, qreal toneBoost) {
     if (flavour == Variant::Monochrome)
         return grayscale(Argb{ colour }, mode);
 
@@ -165,8 +165,8 @@ Argb adjusted(Argb colour, Argb blendColour, Variant flavour, Scheme::Mode mode,
 
 } // namespace
 
-SchemeColours generate(Argb sourceColour, Variant flavour, Scheme::Mode mode) {
-    const auto isDark = mode == Scheme::Mode::Dark;
+SchemeColours generate(Argb sourceColour, Variant flavour, Mode mode) {
+    const auto isDark = mode == Mode::Dark;
     const auto scheme = schemeForVariant(flavour, sourceColour, isDark);
     const auto paletteColour = scheme.primaryPaletteKeyColour();
     const auto primary = scheme.primary();

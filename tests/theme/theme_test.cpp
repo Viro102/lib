@@ -45,7 +45,7 @@ private:
     scheme::SchemeColours m_colours =
         std::bit_cast<scheme::SchemeColours>(std::array<quint32, sizeof(scheme::SchemeColours) / sizeof(quint32)>{});
 
-    [[nodiscard]] scheme::Scheme scheme(scheme::Scheme::Mode mode = scheme::Scheme::Mode::Dark) const {
+    [[nodiscard]] scheme::SchemeData scheme(scheme::Mode mode = scheme::Mode::Dark) const {
         return { .name = u"test"_s, .flavour = u"default"_s, .mode = mode, .colours = m_colours };
     }
 
@@ -89,8 +89,7 @@ private slots:
                         "{{ mode ? a|b=no | 1 | 2 }}"
                         "{{ missing ? dark=x | y }}");
         QCOMPARE(theme::Theme(scheme()).render(path), u"D2962ffI1{{ missing ? dark=x | y }}"_s);
-        QCOMPARE(
-            theme::Theme(scheme(scheme::Scheme::Mode::Light)).render(path), u"Lno000000x1{{ missing ? dark=x | y }}"_s);
+        QCOMPARE(theme::Theme(scheme(scheme::Mode::Light)).render(path), u"Lno000000x1{{ missing ? dark=x | y }}"_s);
     }
 
     void rendersShippedTemplate() {
@@ -149,7 +148,7 @@ private slots:
         const auto out = m_root.filePath(u"hook.txt"_s);
         QVERIFY(config.setValue(u"theme.postHook", u"echo \"$SCHEME_NAME $SCHEME_MODE $SCHEME_COLOURS\" > "_s + out));
 
-        theme::Theme(scheme(scheme::Scheme::Mode::Light)).apply().waitForFinished();
+        theme::Theme(scheme(scheme::Mode::Light)).apply().waitForFinished();
 
         const auto result = readFile(out);
         QVERIFY(result.startsWith(u"test light {"));
@@ -243,14 +242,14 @@ private slots:
     }
 
     void stateRoundTrips() {
-        QVERIFY(theme::Theme::saveState(scheme(scheme::Scheme::Mode::Light)));
+        QVERIFY(theme::Theme::saveState(scheme(scheme::Mode::Light)));
 
         const auto loaded = theme::Theme::loadState();
         if (!loaded.has_value())
             QFAIL("loadState returned nullopt");
         QCOMPARE(loaded->name, u"test"_s);
         QCOMPARE(loaded->flavour, u"default"_s);
-        QCOMPARE(loaded->mode, scheme::Scheme::Mode::Light);
+        QCOMPARE(loaded->mode, scheme::Mode::Light);
         QCOMPARE(scheme::coloursToBytes(loaded->colours), scheme::coloursToBytes(m_colours));
     }
 
@@ -265,7 +264,7 @@ private slots:
 
         QByteArray truncated;
         QDataStream out(&truncated, QIODevice::WriteOnly);
-        out << u"test"_s << u"default"_s << scheme::Scheme::Mode::Dark << QByteArray("abcd");
+        out << u"test"_s << u"default"_s << scheme::Mode::Dark << QByteArray("abcd");
         writeFile(path, truncated);
         QVERIFY(!theme::Theme::loadState().has_value());
     }
@@ -285,7 +284,7 @@ private slots:
         auto newer = m_colours;
         newer.primary = m3colours::Argb{ 0xFF00FF00 };
         QVERIFY(theme::Theme::saveState(
-            { .name = u"newer"_s, .flavour = u"default"_s, .mode = scheme::Scheme::Mode::Dark, .colours = newer }));
+            { .name = u"newer"_s, .flavour = u"default"_s, .mode = scheme::Mode::Dark, .colours = newer }));
 
         lock.unlock();
         pending.waitForFinished();

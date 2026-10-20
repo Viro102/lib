@@ -44,7 +44,7 @@ class TestGenerator : public QObject {
 private slots:
 
     void darkMode() {
-        const auto colours = generate(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark);
+        const auto colours = generate(k_sourceColour, Variant::TonalSpot, Mode::Dark);
         for (const auto colour : allColours(colours))
             QCOMPARE(colour.alpha(), 0xFF);
         QVERIFY(colours.background.red() < 0x80);
@@ -52,7 +52,7 @@ private slots:
     }
 
     void lightMode() {
-        const auto colours = generate(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Light);
+        const auto colours = generate(k_sourceColour, Variant::TonalSpot, Mode::Light);
         for (const auto colour : allColours(colours))
             QCOMPARE(colour.alpha(), 0xFF);
         QVERIFY(colours.background.red() > 0x80);
@@ -60,31 +60,31 @@ private slots:
     }
 
     void monochrome() {
-        const auto colours = generate(k_sourceColour, Variant::Monochrome, Scheme::Mode::Dark);
+        const auto colours = generate(k_sourceColour, Variant::Monochrome, Mode::Dark);
         QVERIFY(isGrayscale(colours.primary));
         QVERIFY(isGrayscale(colours.term1));
         QVERIFY(isGrayscale(colours.red));
     }
 
     void variantsDiffer() {
-        const auto tonal = generate(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark);
-        const auto vibrant = generate(k_sourceColour, Variant::Vibrant, Scheme::Mode::Dark);
+        const auto tonal = generate(k_sourceColour, Variant::TonalSpot, Mode::Dark);
+        const auto vibrant = generate(k_sourceColour, Variant::Vibrant, Mode::Dark);
         QVERIFY(allColours(tonal) != allColours(vibrant));
     }
 
     void everyVariantIsOpaque_data() {
         QTest::addColumn<Variant>("variant");
-        QTest::addColumn<Scheme::Mode>("mode");
+        QTest::addColumn<Mode>("mode");
 
         for (const auto& [variant, name] : k_variants) {
-            QTest::addRow("%s-dark", name) << variant << Scheme::Mode::Dark;
-            QTest::addRow("%s-light", name) << variant << Scheme::Mode::Light;
+            QTest::addRow("%s-dark", name) << variant << Mode::Dark;
+            QTest::addRow("%s-light", name) << variant << Mode::Light;
         }
     }
 
     void everyVariantIsOpaque() {
         QFETCH(Variant, variant);
-        QFETCH(const Scheme::Mode, mode);
+        QFETCH(const Mode, mode);
 
         const auto colours = generate(k_sourceColour, variant, mode);
         for (const auto colour : allColours(colours))
@@ -92,15 +92,15 @@ private slots:
     }
 
     void neutralReducesChroma() {
-        const auto tonal = generate(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark);
-        const auto neutral = generate(k_sourceColour, Variant::Neutral, Scheme::Mode::Dark);
+        const auto tonal = generate(k_sourceColour, Variant::TonalSpot, Mode::Dark);
+        const auto neutral = generate(k_sourceColour, Variant::Neutral, Mode::Dark);
         QVERIFY(Hct(neutral.term1).chroma() < Hct(tonal.term1).chroma());
         QVERIFY(Hct(neutral.red).chroma() < Hct(tonal.red).chroma());
     }
 
     void isStable() {
-        const auto first = generate(k_sourceColour, Variant::Vibrant, Scheme::Mode::Dark);
-        const auto second = generate(k_sourceColour, Variant::Vibrant, Scheme::Mode::Dark);
+        const auto first = generate(k_sourceColour, Variant::Vibrant, Mode::Dark);
+        const auto second = generate(k_sourceColour, Variant::Vibrant, Mode::Dark);
         QCOMPARE(allColours(first), allColours(second));
     }
 };

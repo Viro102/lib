@@ -2,12 +2,12 @@
 
 #include <qbytearray.h>
 #include <qfuture.h>
-#include <qimage.h>
 #include <qlist.h>
 #include <qstring.h>
 
 #include <m3colours/scheme.hpp>
 
+#include <memory>
 #include <optional>
 
 namespace caelestia::scheme {
@@ -119,12 +119,12 @@ struct SchemeColours {
     m3colours::Argb kpositiveSelection;
 };
 
-struct Scheme {
-    enum class Mode : quint8 {
-        Light,
-        Dark,
-    };
+enum class Mode : quint8 {
+    Light,
+    Dark,
+};
 
+struct SchemeData {
     const QString name;
     const QString flavour;
     const Mode mode;
@@ -139,10 +139,51 @@ struct NamedColour {
 QList<NamedColour> namedColours(const SchemeColours& colours);
 [[nodiscard]] std::optional<SchemeColours> coloursFromBytes(const QByteArray& bytes);
 [[nodiscard]] QByteArray coloursToBytes(const SchemeColours& colours);
-QString modeName(Scheme::Mode mode);
+QString modeName(Mode mode);
 
-QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Scheme::Mode mode);
-Scheme schemeForImage(const QImage& image, m3colours::scheme::Variant flavour, Scheme::Mode mode);
-QFuture<Scheme> schemeForPath(const QString& path, m3colours::scheme::Variant flavour, Scheme::Mode mode);
+class Scheme;
+
+class Flavour {
+public:
+    [[nodiscard]] const QString& name() const;
+    [[nodiscard]] QList<Mode> modes() const;
+    [[nodiscard]] QFuture<SchemeData> data(Mode mode) const;
+
+private:
+    friend class Scheme;
+
+    Flavour(std::shared_ptr<const Scheme> scheme, QString name);
+
+    std::shared_ptr<const Scheme> m_scheme;
+    QString m_name;
+};
+
+class Scheme : public std::enable_shared_from_this<Scheme> {
+public:
+    Q_DISABLE_COPY_MOVE(Scheme)
+
+    virtual ~Scheme() = default;
+
+    [[nodiscard]] static QFuture<QList<std::shared_ptr<Scheme>>> all();
+    [[nodiscard]] static QFuture<std::shared_ptr<Scheme>> forName(const QString& name);
+    [[nodiscard]] static std::shared_ptr<Scheme> forColour(m3colours::Argb colour);
+    [[nodiscard]] static QFuture<std::shared_ptr<Scheme>> forMedia(const QString& path);
+
+    [[nodiscard]] const QString& name() const;
+    [[nodiscard]] QList<Flavour> flavours() const;
+    [[nodiscard]] std::optional<Flavour> flavour(const QString& name) const;
+
+protected:
+    Scheme(QString name, QStringList flavours);
+
+private:
+    friend class Flavour;
+
+    [[nodiscard]] virtual QList<Mode> modes(const QString& flavour) const = 0;
+    [[nodiscard]] virtual QFuture<SchemeData> load(const QString& flavour, Mode mode) const = 0;
+
+    const QString m_name;
+    const QStringList m_flavours;
+};
 
 } // namespace caelestia::scheme

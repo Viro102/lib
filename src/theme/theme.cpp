@@ -107,9 +107,9 @@ std::optional<QString> select(QStringView field, const auto& resolve) {
     return QString();
 }
 
-QString defaultIconTheme(scheme::Scheme::Mode mode) {
+QString defaultIconTheme(scheme::Mode mode) {
     const auto& cfg = config::Config::instance().theme();
-    return mode == scheme::Scheme::Mode::Dark ? cfg.iconThemeDark() : cfg.iconThemeLight();
+    return mode == scheme::Mode::Dark ? cfg.iconThemeDark() : cfg.iconThemeLight();
 }
 
 QString schemeStatePath() {
@@ -118,11 +118,11 @@ QString schemeStatePath() {
 
 } // namespace
 
-Theme::Theme(scheme::Scheme scheme)
+Theme::Theme(scheme::SchemeData scheme)
     : m_scheme(std::move(scheme))
     , m_iconTheme(defaultIconTheme(m_scheme.mode)) {}
 
-bool Theme::saveState(const scheme::Scheme& scheme) {
+bool Theme::saveState(const scheme::SchemeData& scheme) {
     QDir().mkpath(config::ConfigPaths::stateDir());
     QSaveFile file(schemeStatePath());
     if (!file.open(QIODevice::WriteOnly)) {
@@ -139,7 +139,7 @@ bool Theme::saveState(const scheme::Scheme& scheme) {
     return true;
 }
 
-std::optional<scheme::Scheme> Theme::loadState() {
+std::optional<scheme::SchemeData> Theme::loadState() {
     QFile file(schemeStatePath());
     if (!file.open(QIODevice::ReadOnly)) {
         qCWarning(lcTheme) << "Unable to open" << file.fileName() << file.errorString();
@@ -148,7 +148,7 @@ std::optional<scheme::Scheme> Theme::loadState() {
 
     QString name;
     QString flavour;
-    scheme::Scheme::Mode mode;
+    scheme::Mode mode;
     QByteArray colours;
     QDataStream in(&file);
     in >> name >> flavour >> mode >> colours;
@@ -160,7 +160,7 @@ std::optional<scheme::Scheme> Theme::loadState() {
     const auto parsed = scheme::coloursFromBytes(colours);
     if (!parsed)
         return std::nullopt;
-    return scheme::Scheme{ .name = name, .flavour = flavour, .mode = mode, .colours = *parsed };
+    return scheme::SchemeData{ .name = name, .flavour = flavour, .mode = mode, .colours = *parsed };
 }
 
 QFuture<void> Theme::apply() const {

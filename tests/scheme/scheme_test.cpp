@@ -7,7 +7,6 @@
 #include <qtest.h>
 
 #include <array>
-#include <bit>
 #include <stdexcept>
 #include <utility>
 
@@ -25,7 +24,6 @@ using Qt::StringLiterals::operator""_s;
 namespace {
 
 constexpr Argb k_sourceColour{ 0xFF2962FF };
-constexpr Argb k_fallbackColour{ 0xFF4285F4 };
 
 constexpr std::array k_variantNames = {
     std::pair{ Variant::Monochrome, QStringView(u"monochrome") },
@@ -44,6 +42,30 @@ QByteArray toBytes(const SchemeColours& colours) {
     return { reinterpret_cast<const char*>(&colours), sizeof(colours) };
 }
 
+QStringList names(const QList<std::shared_ptr<Scheme>>& schemes) {
+    QStringList out;
+    for (const auto& scheme : schemes)
+        out.append(scheme->name());
+    return out;
+}
+
+QStringList names(const QList<Flavour>& flavours) {
+    QStringList out;
+    for (const auto& flavour : flavours)
+        out.append(flavour.name());
+    return out;
+}
+
+SchemeData dataFor(const QString& name, const QString& flavour, Mode mode) {
+    const auto scheme = Scheme::forName(name).result();
+    if (!scheme)
+        throw std::invalid_argument("no such scheme");
+    const auto f = scheme->flavour(flavour);
+    if (!f)
+        throw std::invalid_argument("no such flavour");
+    return f->data(mode).result();
+}
+
 } // namespace
 
 class TestScheme : public QObject {
@@ -51,7 +73,6 @@ class TestScheme : public QObject {
 
 private:
     QTemporaryDir m_root;
-    QImage m_image;
     QString m_path;
 
     void installCustomScheme(const QString& source, const QString& name, const QString& flavour) {
@@ -67,25 +88,35 @@ private slots:
         qputenv("XDG_CACHE_HOME", m_root.path().toUtf8());
         qputenv("XDG_CONFIG_HOME", m_root.path().toUtf8());
 
-        m_image = QImage(8, 8, QImage::Format_RGB32);
-        m_image.fill(k_sourceColour.value());
+        QImage image(8, 8, QImage::Format_RGB32);
+        image.fill(k_sourceColour.value());
         m_path = m_root.filePath(u"wallpaper.png"_s);
-        QVERIFY(m_image.save(m_path));
+        QVERIFY(image.save(m_path));
     }
 
-    void staticSchemeLoads() {
-        const auto scheme = schemeForName(u"caelestia"_s, u"default"_s, Scheme::Mode::Dark).result();
-        QCOMPARE(scheme.name, u"caelestia"_s);
-        QCOMPARE(scheme.flavour, u"default"_s);
-        QCOMPARE(scheme.mode, Scheme::Mode::Dark);
-        QCOMPARE(scheme.colours.background, Argb(0xFF0A0F0F));
-        QCOMPARE(scheme.colours.onBackground, Argb(0xFFDCE8E6));
+    void bundledSchemeLoads() {
+        const auto scheme = Scheme::forName(u"caelestia"_s).result();
+        QVERIFY(scheme);
+        QCOMPARE(scheme->name(), u"caelestia"_s);
+        QCOMPARE(names(scheme->flavours()), QStringList{ u"default"_s });
+
+        const auto flavour = scheme->flavour(u"default"_s);
+        QVERIFY(flavour.has_value());
+        QCOMPARE(flavour->name(), u"default"_s);
+        QCOMPARE(flavour->modes(), (QList<Mode>{ Mode::Light, Mode::Dark }));
+
+        const auto data = flavour->data(Mode::Dark).result();
+        QCOMPARE(data.name, u"caelestia"_s);
+        QCOMPARE(data.flavour, u"default"_s);
+        QCOMPARE(data.mode, Mode::Dark);
+        QCOMPARE(data.colours.background, Argb(0xFF0A0F0F));
+        QCOMPARE(data.colours.onBackground, Argb(0xFFDCE8E6));
     }
 
-    void staticSchemeLightMode() {
-        const auto scheme = schemeForName(u"caelestia"_s, u"default"_s, Scheme::Mode::Light).result();
-        QCOMPARE(scheme.mode, Scheme::Mode::Light);
-        QVERIFY(scheme.colours.background.red() > 0x80);
+    void bundledSchemeLightMode() {
+        const auto data = dataFor(u"caelestia"_s, u"default"_s, Mode::Light);
+        QCOMPARE(data.mode, Mode::Light);
+        QVERIFY(data.colours.background.red() > 0x80);
     }
 
     void bundledSchemesHaveAllColours() {
@@ -98,43 +129,79 @@ private slots:
             const auto parts = info.path().split(u'/', Qt::SkipEmptyParts);
             const auto& name = parts[parts.size() - 2];
             const auto& flavour = parts.last();
-            const auto mode = info.baseName() == u"light" ? Scheme::Mode::Light : Scheme::Mode::Dark;
+            const auto mode = info.baseName() == u"light" ? Mode::Light : Mode::Dark;
             const auto tag = info.filePath().toUtf8();
 
-            const auto scheme = schemeForName(name, flavour, mode).result();
-            QCOMPARE(scheme.name, name);
-            QCOMPARE(scheme.flavour, flavour);
-            QCOMPARE(scheme.mode, mode);
-            for (const auto colour : allColours(scheme.colours))
+            const auto data = dataFor(name, flavour, mode);
+            QCOMPARE(data.name, name);
+            QCOMPARE(data.flavour, flavour);
+            QCOMPARE(data.mode, mode);
+            for (const auto colour : allColours(data.colours))
                 QVERIFY2(colour.alpha() == 0xFF, tag.constData());
         }
     }
 
-    void missingStaticSchemeThrows() {
-        const auto future = schemeForName(u"missing"_s, u"default"_s, Scheme::Mode::Dark);
-        QVERIFY_THROWS_EXCEPTION(std::invalid_argument, future.result());
+    void unknownSchemeIsNull() {
+        QVERIFY(!Scheme::forName(u"missing"_s).result());
+        QVERIFY(!Scheme::forName(QString()).result());
+        QVERIFY(!Scheme::forName(u"caelestia/default"_s).result());
+    }
+
+    void unknownFlavourIsNullopt() {
+        const auto scheme = Scheme::forName(u"caelestia"_s).result();
+        QVERIFY(scheme);
+        QVERIFY(!scheme->flavour(u"missing"_s).has_value());
+    }
+
+    void allListsBundledAndCustom() {
+        installCustomScheme(u":/schemes/dracula/medium/dark.txt"_s, u"listed"_s, u"custom"_s);
+        QVERIFY(QDir().mkpath(caelestia::config::ConfigPaths::customSchemesDir() + u"/empty/custom"_s));
+
+        const auto schemes = Scheme::all().result();
+        const auto listed = names(schemes);
+        QVERIFY(listed.contains(u"caelestia"_s));
+        QVERIFY(listed.contains(u"gruvbox"_s));
+        QVERIFY(listed.contains(u"listed"_s));
+        QVERIFY(!listed.contains(u"empty"_s));
+        QCOMPARE(listed.size(), QSet<QString>(listed.cbegin(), listed.cend()).size());
+        for (const auto& scheme : schemes)
+            QVERIFY2(!scheme->flavours().isEmpty(), scheme->name().toUtf8().constData());
+    }
+
+    void allSnapshotsCatalogue() {
+        installCustomScheme(u":/schemes/dracula/medium/dark.txt"_s, u"snapshot"_s, u"custom"_s);
+        const auto schemes = Scheme::all().result();
+        QVERIFY(names(schemes).contains(u"snapshot"_s));
+        QVERIFY(QDir(caelestia::config::ConfigPaths::customSchemesDir() + u"/snapshot"_s).removeRecursively());
+        QVERIFY(names(schemes).contains(u"snapshot"_s));
+        QVERIFY(!names(Scheme::all().result()).contains(u"snapshot"_s));
     }
 
     void customSchemeLoads() {
         installCustomScheme(u":/schemes/dracula/medium/dark.txt"_s, u"mine"_s, u"custom"_s);
-        const auto custom = schemeForName(u"mine"_s, u"custom"_s, Scheme::Mode::Dark).result();
-        const auto bundled = schemeForName(u"dracula"_s, u"medium"_s, Scheme::Mode::Dark).result();
+        const auto custom = dataFor(u"mine"_s, u"custom"_s, Mode::Dark);
+        const auto bundled = dataFor(u"dracula"_s, u"medium"_s, Mode::Dark);
         QCOMPARE(custom.name, u"mine"_s);
         QCOMPARE(custom.flavour, u"custom"_s);
-        QCOMPARE(custom.mode, Scheme::Mode::Dark);
+        QCOMPARE(custom.mode, Mode::Dark);
         QCOMPARE(allColours(custom.colours), allColours(bundled.colours));
     }
 
     void customSchemeMissingModeThrows() {
         installCustomScheme(u":/schemes/dracula/medium/dark.txt"_s, u"darkonly"_s, u"custom"_s);
-        const auto future = schemeForName(u"darkonly"_s, u"custom"_s, Scheme::Mode::Light);
+        const auto scheme = Scheme::forName(u"darkonly"_s).result();
+        QVERIFY(scheme);
+        const auto flavour = scheme->flavour(u"custom"_s);
+        QVERIFY(flavour.has_value());
+        QCOMPARE(flavour->modes(), QList<Mode>{ Mode::Dark });
+        const auto future = flavour->data(Mode::Light);
         QVERIFY_THROWS_EXCEPTION(std::invalid_argument, future.result());
     }
 
     void bundledSchemeShadowsCustom() {
         installCustomScheme(u":/schemes/dracula/medium/dark.txt"_s, u"caelestia"_s, u"default"_s);
-        const auto scheme = schemeForName(u"caelestia"_s, u"default"_s, Scheme::Mode::Dark).result();
-        QCOMPARE(scheme.colours.background, Argb(0xFF0A0F0F));
+        const auto data = dataFor(u"caelestia"_s, u"default"_s, Mode::Dark);
+        QCOMPARE(data.colours.background, Argb(0xFF0A0F0F));
     }
 
     void customSchemeParsing() {
@@ -150,18 +217,18 @@ private slots:
                    "primary #ABCDEF\n");
         file.close();
 
-        const auto scheme = schemeForName(u"handwritten"_s, u"custom"_s, Scheme::Mode::Dark).result();
-        QCOMPARE(scheme.colours.background, Argb(0xFF112233));
-        QCOMPARE(scheme.colours.onBackground, Argb(0xFF445566));
-        QCOMPARE(scheme.colours.primary, Argb(0xFFABCDEF));
-        QCOMPARE(scheme.colours.secondary, Argb(0));
-        QCOMPARE(scheme.colours.surface, Argb(0));
-        QCOMPARE(scheme.colours.outline, Argb(0));
-        QCOMPARE(scheme.colours.error, Argb(0));
+        const auto data = dataFor(u"handwritten"_s, u"custom"_s, Mode::Dark);
+        QCOMPARE(data.colours.background, Argb(0xFF112233));
+        QCOMPARE(data.colours.onBackground, Argb(0xFF445566));
+        QCOMPARE(data.colours.primary, Argb(0xFFABCDEF));
+        QCOMPARE(data.colours.secondary, Argb(0));
+        QCOMPARE(data.colours.surface, Argb(0));
+        QCOMPARE(data.colours.outline, Argb(0));
+        QCOMPARE(data.colours.error, Argb(0));
     }
 
     void namedColoursMatchStruct() {
-        const auto colours = generate(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark);
+        const auto colours = generate(k_sourceColour, Variant::TonalSpot, Mode::Dark);
         const auto named = namedColours(colours);
         const auto all = allColours(colours);
         QCOMPARE(named.size(), static_cast<qsizetype>(all.size()));
@@ -170,86 +237,75 @@ private slots:
     }
 
     void modeNames() {
-        QCOMPARE(modeName(Scheme::Mode::Light), u"light"_s);
-        QCOMPARE(modeName(Scheme::Mode::Dark), u"dark"_s);
+        QCOMPARE(modeName(Mode::Light), u"light"_s);
+        QCOMPARE(modeName(Mode::Dark), u"dark"_s);
     }
 
-    void flavourNames() {
-        for (const auto& [variant, name] : k_variantNames)
-            QCOMPARE(schemeForImage(m_image, variant, Scheme::Mode::Dark).flavour, name.toString());
+    void dynamicSchemeFlavours() {
+        const auto scheme = Scheme::forColour(k_sourceColour);
+        QVERIFY(scheme);
+        QCOMPARE(scheme->name(), u"dynamic"_s);
+
+        const auto flavours = scheme->flavours();
+        QCOMPARE(flavours.size(), static_cast<qsizetype>(k_variantNames.size()));
+        for (qsizetype i = 0; i < flavours.size(); ++i) {
+            QCOMPARE(flavours[i].name(), k_variantNames[static_cast<size_t>(i)].second.toString());
+            QCOMPARE(flavours[i].modes(), (QList<Mode>{ Mode::Light, Mode::Dark }));
+        }
+        QVERIFY(!scheme->flavour(u"bogus"_s).has_value());
     }
 
-    void schemeFromImage() {
-        const auto scheme = schemeForImage(m_image, Variant::TonalSpot, Scheme::Mode::Dark);
-        QCOMPARE(scheme.name, u"dynamic"_s);
-        QCOMPARE(scheme.flavour, u"tonalspot"_s);
-        QCOMPARE(scheme.mode, Scheme::Mode::Dark);
-        QCOMPARE(
-            allColours(scheme.colours), allColours(generate(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark)));
+    void schemeForColour() {
+        const auto data = Scheme::forColour(k_sourceColour)->flavour(u"tonalspot"_s)->data(Mode::Dark).result();
+        QCOMPARE(data.name, u"dynamic"_s);
+        QCOMPARE(data.flavour, u"tonalspot"_s);
+        QCOMPARE(data.mode, Mode::Dark);
+        QCOMPARE(allColours(data.colours), allColours(generate(k_sourceColour, Variant::TonalSpot, Mode::Dark)));
     }
 
-    void schemeFromImageLightMode() {
-        const auto scheme = schemeForImage(m_image, Variant::Vibrant, Scheme::Mode::Light);
-        QCOMPARE(scheme.flavour, u"vibrant"_s);
-        QCOMPARE(scheme.mode, Scheme::Mode::Light);
-        QCOMPARE(
-            allColours(scheme.colours), allColours(generate(k_sourceColour, Variant::Vibrant, Scheme::Mode::Light)));
+    void schemeForColourLightMode() {
+        const auto data = Scheme::forColour(k_sourceColour)->flavour(u"vibrant"_s)->data(Mode::Light).result();
+        QCOMPARE(data.flavour, u"vibrant"_s);
+        QCOMPARE(data.mode, Mode::Light);
+        QCOMPARE(allColours(data.colours), allColours(generate(k_sourceColour, Variant::Vibrant, Mode::Light)));
     }
 
-    void schemeFromPath() {
-        const auto scheme = schemeForPath(m_path, Variant::TonalSpot, Scheme::Mode::Dark).result();
-        QCOMPARE(scheme.name, u"dynamic"_s);
-        QCOMPARE(scheme.flavour, u"tonalspot"_s);
-        QCOMPARE(scheme.mode, Scheme::Mode::Dark);
-        QCOMPARE(
-            allColours(scheme.colours), allColours(generate(k_sourceColour, Variant::TonalSpot, Scheme::Mode::Dark)));
+    void schemeForMediaMatchesColour() {
+        const auto scheme = Scheme::forMedia(m_path).result();
+        QVERIFY(scheme);
+        QCOMPARE(scheme->name(), u"dynamic"_s);
+        const auto fromMedia = scheme->flavour(u"monochrome"_s)->data(Mode::Light).result();
+        const auto fromColour = Scheme::forColour(k_sourceColour)->flavour(u"monochrome"_s)->data(Mode::Light).result();
+        QCOMPARE(fromMedia.flavour, fromColour.flavour);
+        QCOMPARE(fromMedia.mode, fromColour.mode);
+        QCOMPARE(allColours(fromMedia.colours), allColours(fromColour.colours));
     }
 
-    void schemeFromPathMatchesImage() {
-        const auto fromPath = schemeForPath(m_path, Variant::Monochrome, Scheme::Mode::Light).result();
-        const auto fromImage = schemeForImage(m_image, Variant::Monochrome, Scheme::Mode::Light);
-        QCOMPARE(fromPath.name, fromImage.name);
-        QCOMPARE(fromPath.flavour, fromImage.flavour);
-        QCOMPARE(fromPath.mode, fromImage.mode);
-        QCOMPARE(allColours(fromPath.colours), allColours(fromImage.colours));
-    }
+    void schemeForMissingMediaIsNull() { QVERIFY(!Scheme::forMedia(m_root.filePath(u"missing.png"_s)).result()); }
 
-    void schemeFromPathUsesCache() {
+    void dynamicSchemeUsesCache() {
         constexpr auto k_variant = Variant::FruitSalad;
-        constexpr auto k_mode = Scheme::Mode::Dark;
-        const auto seeded = generate(Argb(0xFFFF0000), Variant::Vibrant, Scheme::Mode::Light);
+        constexpr auto k_mode = Mode::Dark;
+        const auto seeded = generate(Argb(0xFFFF0000), Variant::Vibrant, Mode::Light);
         const auto key = SchemeCache::keyFor(k_sourceColour, k_variant, k_mode);
         SchemeCache::instance().store(key, toBytes(seeded));
         QCOMPARE(SchemeCache::instance().lookup(key).result(), toBytes(seeded));
 
-        const auto scheme = schemeForPath(m_path, k_variant, k_mode).result();
-        QCOMPARE(allColours(scheme.colours), allColours(seeded));
-        QVERIFY(allColours(scheme.colours) != allColours(generate(k_sourceColour, k_variant, k_mode)));
+        const auto data = Scheme::forColour(k_sourceColour)->flavour(u"fruitsalad"_s)->data(k_mode).result();
+        QCOMPARE(allColours(data.colours), allColours(seeded));
+        QVERIFY(allColours(data.colours) != allColours(generate(k_sourceColour, k_variant, k_mode)));
     }
 
-    void schemeFromPathIgnoresWrongSizedCache() {
+    void dynamicSchemeIgnoresWrongSizedCache() {
         constexpr auto k_variant = Variant::Rainbow;
-        constexpr auto k_mode = Scheme::Mode::Light;
+        constexpr auto k_mode = Mode::Light;
         const auto key = SchemeCache::keyFor(k_sourceColour, k_variant, k_mode);
         const QByteArray bad(static_cast<qsizetype>(sizeof(SchemeColours)) - 1, '\x7f');
         SchemeCache::instance().store(key, bad);
         QCOMPARE(SchemeCache::instance().lookup(key).result(), bad);
 
-        const auto scheme = schemeForPath(m_path, k_variant, k_mode).result();
-        QCOMPARE(allColours(scheme.colours), allColours(generate(k_sourceColour, k_variant, k_mode)));
-    }
-
-    void schemeFromNullImageUsesFallback() {
-        const auto scheme = schemeForImage(QImage(), Variant::TonalSpot, Scheme::Mode::Dark);
-        QCOMPARE(
-            allColours(scheme.colours), allColours(generate(k_fallbackColour, Variant::TonalSpot, Scheme::Mode::Dark)));
-    }
-
-    void schemeFromMissingPathUsesFallback() {
-        const auto scheme =
-            schemeForPath(m_root.filePath(u"missing.png"_s), Variant::TonalSpot, Scheme::Mode::Dark).result();
-        QCOMPARE(
-            allColours(scheme.colours), allColours(generate(k_fallbackColour, Variant::TonalSpot, Scheme::Mode::Dark)));
+        const auto data = Scheme::forColour(k_sourceColour)->flavour(u"rainbow"_s)->data(k_mode).result();
+        QCOMPARE(allColours(data.colours), allColours(generate(k_sourceColour, k_variant, k_mode)));
     }
 };
 

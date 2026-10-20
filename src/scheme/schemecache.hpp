@@ -9,7 +9,7 @@ class SchemeCache : public utils::BlobCache {
 public:
     static SchemeCache& instance();
 
-    static QString keyFor(m3colours::Argb sourceColour, m3colours::scheme::Variant flavour, Scheme::Mode mode);
+    static QString keyFor(m3colours::Argb sourceColour, m3colours::scheme::Variant flavour, Mode mode);
 
 private:
     explicit SchemeCache();
