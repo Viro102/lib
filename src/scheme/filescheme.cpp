@@ -107,7 +107,7 @@ std::shared_ptr<Scheme> FileScheme::open(const QStringList& roots, const QString
         return nullptr;
 
     QStringList flavours(flavourSet.cbegin(), flavourSet.cend());
-    std::sort(flavours.begin(), flavours.end());
+    std::ranges::sort(flavours);
     return std::make_shared<FileScheme>(name, std::move(flavours), std::move(paths));
 }
 

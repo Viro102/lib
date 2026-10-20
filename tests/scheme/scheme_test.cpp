@@ -7,6 +7,7 @@
 #include <qtest.h>
 
 #include <array>
+#include <memory>
 #include <stdexcept>
 #include <utility>
 
@@ -56,14 +57,17 @@ QStringList names(const QList<Flavour>& flavours) {
     return out;
 }
 
-SchemeData dataFor(const QString& name, const QString& flavour, Mode mode) {
-    const auto scheme = Scheme::forName(name).result();
+Flavour flavourFor(const std::shared_ptr<Scheme>& scheme, const QString& name) {
     if (!scheme)
         throw std::invalid_argument("no such scheme");
-    const auto f = scheme->flavour(flavour);
-    if (!f)
+    const auto flavour = scheme->flavour(name);
+    if (!flavour)
         throw std::invalid_argument("no such flavour");
-    return f->data(mode).result();
+    return *flavour;
+}
+
+SchemeData dataFor(const QString& name, const QString& flavour, Mode mode) {
+    return flavourFor(Scheme::forName(name).result(), flavour).data(mode).result();
 }
 
 } // namespace
@@ -100,12 +104,11 @@ private slots:
         QCOMPARE(scheme->name(), u"caelestia"_s);
         QCOMPARE(names(scheme->flavours()), QStringList{ u"default"_s });
 
-        const auto flavour = scheme->flavour(u"default"_s);
-        QVERIFY(flavour.has_value());
-        QCOMPARE(flavour->name(), u"default"_s);
-        QCOMPARE(flavour->modes(), (QList<Mode>{ Mode::Light, Mode::Dark }));
+        const auto flavour = flavourFor(scheme, u"default"_s);
+        QCOMPARE(flavour.name(), u"default"_s);
+        QCOMPARE(flavour.modes(), (QList<Mode>{ Mode::Light, Mode::Dark }));
 
-        const auto data = flavour->data(Mode::Dark).result();
+        const auto data = flavour.data(Mode::Dark).result();
         QCOMPARE(data.name, u"caelestia"_s);
         QCOMPARE(data.flavour, u"default"_s);
         QCOMPARE(data.mode, Mode::Dark);
@@ -191,10 +194,9 @@ private slots:
         installCustomScheme(u":/schemes/dracula/medium/dark.txt"_s, u"darkonly"_s, u"custom"_s);
         const auto scheme = Scheme::forName(u"darkonly"_s).result();
         QVERIFY(scheme);
-        const auto flavour = scheme->flavour(u"custom"_s);
-        QVERIFY(flavour.has_value());
-        QCOMPARE(flavour->modes(), QList<Mode>{ Mode::Dark });
-        const auto future = flavour->data(Mode::Light);
+        const auto flavour = flavourFor(scheme, u"custom"_s);
+        QCOMPARE(flavour.modes(), QList<Mode>{ Mode::Dark });
+        const auto future = flavour.data(Mode::Light);
         QVERIFY_THROWS_EXCEPTION(std::invalid_argument, future.result());
     }
 
@@ -211,8 +213,8 @@ private slots:
         const auto scheme = Scheme::forName(u"gruvbox"_s).result();
         QVERIFY(scheme);
         QCOMPARE(names(scheme->flavours()), (QStringList{ u"extra"_s, u"hard"_s, u"medium"_s, u"soft"_s }));
-        QCOMPARE(scheme->flavour(u"extra"_s)->modes(), QList<Mode>{ Mode::Dark });
-        QCOMPARE(scheme->flavour(u"hard"_s)->modes(), (QList<Mode>{ Mode::Light, Mode::Dark }));
+        QCOMPARE(flavourFor(scheme, u"extra"_s).modes(), QList<Mode>{ Mode::Dark });
+        QCOMPARE(flavourFor(scheme, u"hard"_s).modes(), (QList<Mode>{ Mode::Light, Mode::Dark }));
     }
 
     void unreadableCustomFallsBackToBundled() {
@@ -257,7 +259,7 @@ private slots:
 
         const auto scheme = Scheme::forName(u"partial"_s).result();
         QVERIFY(scheme);
-        const auto future = scheme->flavour(u"custom"_s)->data(Mode::Dark);
+        const auto future = flavourFor(scheme, u"custom"_s).data(Mode::Dark);
         QVERIFY_THROWS_EXCEPTION(std::invalid_argument, future.result());
     }
 
@@ -302,7 +304,7 @@ private slots:
     }
 
     void schemeForColour() {
-        const auto data = Scheme::forColour(k_sourceColour)->flavour(u"tonalspot"_s)->data(Mode::Dark).result();
+        const auto data = flavourFor(Scheme::forColour(k_sourceColour), u"tonalspot"_s).data(Mode::Dark).result();
         QCOMPARE(data.name, u"dynamic"_s);
         QCOMPARE(data.flavour, u"tonalspot"_s);
         QCOMPARE(data.mode, Mode::Dark);
@@ -310,7 +312,7 @@ private slots:
     }
 
     void schemeForColourLightMode() {
-        const auto data = Scheme::forColour(k_sourceColour)->flavour(u"vibrant"_s)->data(Mode::Light).result();
+        const auto data = flavourFor(Scheme::forColour(k_sourceColour), u"vibrant"_s).data(Mode::Light).result();
         QCOMPARE(data.flavour, u"vibrant"_s);
         QCOMPARE(data.mode, Mode::Light);
         QCOMPARE(allColours(data.colours), allColours(generate(k_sourceColour, Variant::Vibrant, Mode::Light)));
@@ -320,8 +322,9 @@ private slots:
         const auto scheme = Scheme::forMedia(m_path).result();
         QVERIFY(scheme);
         QCOMPARE(scheme->name(), u"dynamic"_s);
-        const auto fromMedia = scheme->flavour(u"monochrome"_s)->data(Mode::Light).result();
-        const auto fromColour = Scheme::forColour(k_sourceColour)->flavour(u"monochrome"_s)->data(Mode::Light).result();
+        const auto fromMedia = flavourFor(scheme, u"monochrome"_s).data(Mode::Light).result();
+        const auto fromColour =
+            flavourFor(Scheme::forColour(k_sourceColour), u"monochrome"_s).data(Mode::Light).result();
         QCOMPARE(fromMedia.flavour, fromColour.flavour);
         QCOMPARE(fromMedia.mode, fromColour.mode);
         QCOMPARE(allColours(fromMedia.colours), allColours(fromColour.colours));
@@ -337,7 +340,7 @@ private slots:
         SchemeCache::instance().store(key, toBytes(seeded));
         QCOMPARE(SchemeCache::instance().lookup(key).result(), toBytes(seeded));
 
-        const auto data = Scheme::forColour(k_sourceColour)->flavour(u"fruitsalad"_s)->data(k_mode).result();
+        const auto data = flavourFor(Scheme::forColour(k_sourceColour), u"fruitsalad"_s).data(k_mode).result();
         QCOMPARE(allColours(data.colours), allColours(seeded));
         QVERIFY(allColours(data.colours) != allColours(generate(k_sourceColour, k_variant, k_mode)));
     }
@@ -350,7 +353,7 @@ private slots:
         SchemeCache::instance().store(key, bad);
         QCOMPARE(SchemeCache::instance().lookup(key).result(), bad);
 
-        const auto data = Scheme::forColour(k_sourceColour)->flavour(u"rainbow"_s)->data(k_mode).result();
+        const auto data = flavourFor(Scheme::forColour(k_sourceColour), u"rainbow"_s).data(k_mode).result();
         QCOMPARE(allColours(data.colours), allColours(generate(k_sourceColour, k_variant, k_mode)));
     }
 };

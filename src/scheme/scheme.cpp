@@ -82,7 +82,7 @@ QFuture<QList<std::shared_ptr<Scheme>>> Scheme::all() {
         }
 
         QStringList names(nameSet.cbegin(), nameSet.cend());
-        std::sort(names.begin(), names.end());
+        std::ranges::sort(names);
 
         QList<std::shared_ptr<Scheme>> schemes;
         for (const auto& name : std::as_const(names)) {
