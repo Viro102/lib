@@ -8,6 +8,7 @@
 #include <qtextstream.h>
 
 #include <algorithm>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 
@@ -43,37 +44,40 @@ QHash<QString, m3colours::Argb> parseColours(QIODevice& device) {
     return colours;
 }
 
-QHash<QString, m3colours::Argb> readFirst(const QStringList& paths) {
-    for (const auto& path : paths) {
-        QFile file(path);
-        if (file.open(QIODevice::ReadOnly | QIODevice::Text))
-            return parseColours(file);
+std::optional<SchemeColours> readScheme(const QString& path) {
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qCWarning(lcScheme) << "Unable to read scheme" << path << file.errorString();
+        return std::nullopt;
     }
-    throw std::invalid_argument(u"No readable scheme among: %1"_s.arg(paths.join(u", ")).toStdString());
-}
 
-SchemeData parseScheme(const QStringList& paths, const QString& name, const QString& flavour, Mode mode) {
-    const auto map = readFirst(paths);
+    const auto map = parseColours(file);
+    bool complete = true;
     const auto colours = [&](QStringView key) {
         const auto it = map.constFind(key);
         if (it == map.cend()) {
-            qCWarning(lcScheme) << "Scheme" << name << flavour << modeName(mode) << "is missing colour" << key;
+            qCWarning(lcScheme) << "Scheme" << path << "is missing colour" << key;
+            complete = false;
             return m3colours::Argb{ 0 };
         }
         return *it;
     };
 
 #define COLOUR(name) .name = colours(u## #name),
-
-    return {
-        .name = name,
-        .flavour = flavour,
-        .mode = mode,
-        .colours = { CAELESTIA_SCHEME_COLOURS(COLOUR) },
-    };
-
+    const SchemeColours result{ CAELESTIA_SCHEME_COLOURS(COLOUR) };
 #undef COLOUR
+
+    if (!complete)
+        return std::nullopt;
+    return result;
+}
+
+SchemeData parseScheme(const QStringList& paths, const QString& name, const QString& flavour, Mode mode) {
+    for (const auto& path : paths) {
+        if (const auto colours = readScheme(path))
+            return { .name = name, .flavour = flavour, .mode = mode, .colours = *colours };
+    }
+    throw std::invalid_argument(u"No valid scheme among: %1"_s.arg(paths.join(u", ")).toStdString());
 }
 
 } // namespace

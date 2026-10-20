@@ -225,9 +225,11 @@ private slots:
     void customSchemeParsing() {
         const auto dir = caelestia::config::ConfigPaths::customSchemesDir() + u"/handwritten/custom"_s;
         QVERIFY(QDir().mkpath(dir));
+        QVERIFY(QFile::copy(u":/schemes/dracula/medium/dark.txt"_s, dir + u"/dark.txt"_s));
         QFile file(dir + u"/dark.txt"_s);
-        QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Text));
-        file.write("// secondary 0000ff\n"
+        QVERIFY(file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner));
+        QVERIFY(file.open(QIODevice::Append | QIODevice::Text));
+        file.write("\n// secondary 0000ff\n"
                    "background #112233\n"
                    "onBackground 445566\n"
                    "surface\n"
@@ -236,13 +238,39 @@ private slots:
         file.close();
 
         const auto data = dataFor(u"handwritten"_s, u"custom"_s, Mode::Dark);
+        const auto dracula = dataFor(u"dracula"_s, u"medium"_s, Mode::Dark);
         QCOMPARE(data.colours.background, Argb(0xFF112233));
         QCOMPARE(data.colours.onBackground, Argb(0xFF445566));
         QCOMPARE(data.colours.primary, Argb(0xFFABCDEF));
-        QCOMPARE(data.colours.secondary, Argb(0));
-        QCOMPARE(data.colours.surface, Argb(0));
-        QCOMPARE(data.colours.outline, Argb(0));
-        QCOMPARE(data.colours.error, Argb(0));
+        QCOMPARE(data.colours.secondary, dracula.colours.secondary);
+        QCOMPARE(data.colours.surface, dracula.colours.surface);
+        QCOMPARE(data.colours.outline, dracula.colours.outline);
+    }
+
+    void incompleteCustomSchemeIsRejected() {
+        const auto dir = caelestia::config::ConfigPaths::customSchemesDir() + u"/partial/custom"_s;
+        QVERIFY(QDir().mkpath(dir));
+        QFile file(dir + u"/dark.txt"_s);
+        QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Text));
+        file.write("background 112233\n");
+        file.close();
+
+        const auto scheme = Scheme::forName(u"partial"_s).result();
+        QVERIFY(scheme);
+        const auto future = scheme->flavour(u"custom"_s)->data(Mode::Dark);
+        QVERIFY_THROWS_EXCEPTION(std::invalid_argument, future.result());
+    }
+
+    void incompleteCustomFallsBackToBundled() {
+        const auto dir = caelestia::config::ConfigPaths::customSchemesDir() + u"/onedark/default"_s;
+        QVERIFY(QDir().mkpath(dir));
+        QFile file(dir + u"/dark.txt"_s);
+        QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Text));
+        file.write("background 112233\n");
+        file.close();
+
+        const auto data = dataFor(u"onedark"_s, u"default"_s, Mode::Dark);
+        QCOMPARE(data.colours.background, Argb(0xFF121317));
     }
 
     void namedColoursMatchStruct() {
