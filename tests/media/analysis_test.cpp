@@ -6,6 +6,7 @@
 
 #include "caelestia/media/analysis.hpp"
 #include "analysiscache.hpp"
+#include "common.hpp"
 #include "videopixels.hpp"
 
 using namespace caelestia::media;
@@ -55,6 +56,16 @@ private slots:
         m_image = solid(k_sourceColour.value());
         m_path = m_root.filePath(u"wallpaper.png"_s);
         QVERIFY(m_image.save(m_path));
+    }
+
+    void supportedFormats() {
+        QVERIFY(isSupported(m_path));
+        QVERIFY(!isSupported(m_root.path()));
+        QVERIFY(!isSupported(m_root.filePath(u"missing.png"_s)));
+
+        const auto text = m_root.filePath(u"notes.txt"_s);
+        writeFile(text, "hello");
+        QVERIFY(!isSupported(text));
     }
 
     void coloursFromImage() {

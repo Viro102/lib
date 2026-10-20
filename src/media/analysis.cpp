@@ -1,6 +1,7 @@
 #include "caelestia/media/analysis.hpp"
 
 #include <qdatastream.h>
+#include <qfileinfo.h>
 #include <qimagereader.h>
 #include <qmimedatabase.h>
 
@@ -161,8 +162,12 @@ std::vector<m3colours::Argb> animationPixels(QImageReader& reader) {
     return pixels;
 }
 
+bool isVideo(const QString& path) {
+    return QMimeDatabase().mimeTypeForFile(path).name().startsWith(u"video/"_s);
+}
+
 std::vector<m3colours::Argb> pixelsForFile(const QString& path) {
-    if (QMimeDatabase().mimeTypeForFile(path).name().startsWith(u"video/"_s))
+    if (isVideo(path))
         return videoPixels(path, k_videoSamples, pixelsPerFrame(k_videoSamples));
 
     QImageReader reader(path);
@@ -183,6 +188,12 @@ AnalysisCache::AnalysisCache()
 AnalysisCache& AnalysisCache::instance() {
     static AnalysisCache s_instance;
     return s_instance;
+}
+
+bool isSupported(const QString& path) {
+    if (!QFileInfo(path).isFile())
+        return false;
+    return isVideo(path) || QImageReader(path).canRead();
 }
 
 Analysis analyseImage(const QImage& image) {

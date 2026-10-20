@@ -17,6 +17,7 @@ struct Analysis {
     double tone = 0;
 };
 
+[[nodiscard]] bool isSupported(const QString& path);
 Analysis analyseImage(const QImage& image);
 QFuture<Analysis> analyseForPath(const QString& path);
 
