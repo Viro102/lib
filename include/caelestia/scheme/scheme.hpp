@@ -144,7 +144,5 @@ QString modeName(Scheme::Mode mode);
 QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Scheme::Mode mode);
 Scheme schemeForImage(const QImage& image, m3colours::scheme::Variant flavour, Scheme::Mode mode);
 QFuture<Scheme> schemeForPath(const QString& path, m3colours::scheme::Variant flavour, Scheme::Mode mode);
-QList<m3colours::Argb> coloursForImage(const QImage& image);
-QFuture<QList<m3colours::Argb>> coloursForPath(const QString& path);
 
 } // namespace caelestia::scheme

@@ -151,7 +151,7 @@ QFuture<Scheme> schemeForName(const QString& name, const QString& flavour, Schem
 }
 
 Scheme schemeForImage(const QImage& image, m3colours::scheme::Variant flavour, Scheme::Mode mode) {
-    const auto colours = coloursForImage(image);
+    const auto colours = media::analyseImage(image).colours;
     return {
         .name = u"dynamic"_s,
         .flavour = toString(flavour),
@@ -161,8 +161,8 @@ Scheme schemeForImage(const QImage& image, m3colours::scheme::Variant flavour, S
 }
 
 QFuture<Scheme> schemeForPath(const QString& path, m3colours::scheme::Variant flavour, Scheme::Mode mode) {
-    return coloursForPath(path).then([path, flavour, mode](const QList<m3colours::Argb>& colours) -> Scheme {
-        const auto best = sourceColour(colours);
+    return media::analyseForPath(path).then([path, flavour, mode](const media::Analysis& analysis) -> Scheme {
+        const auto best = sourceColour(analysis.colours);
         auto future = SchemeCache::instance().lookup(SchemeCache::keyFor(best, flavour, mode));
         future.waitForFinished();
 
@@ -206,16 +206,6 @@ QList<NamedColour> namedColours(const SchemeColours& colours) {
 #define COLOUR(name) NamedColour{ u## #name, colours.name },
     return { CAELESTIA_SCHEME_COLOURS(COLOUR) };
 #undef COLOUR
-}
-
-QList<m3colours::Argb> coloursForImage(const QImage& image) {
-    return media::analyseImage(image).colours;
-}
-
-QFuture<QList<m3colours::Argb>> coloursForPath(const QString& path) {
-    return media::analyseForPath(path).then([](const media::Analysis& analysis) {
-        return analysis.colours;
-    });
 }
 
 } // namespace caelestia::scheme
