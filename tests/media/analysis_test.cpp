@@ -70,6 +70,22 @@ private slots:
         QCOMPARE(analyseImage(image).dominant, k_sourceColour);
     }
 
+    void coloursRankDominantFirst() {
+        auto image = solid(k_sourceColour.value());
+        for (int x = 0; x < 2; ++x)
+            image.setPixel(x, 0, k_otherColour.value());
+
+        const auto colours = analyseImage(image).colours;
+        QVERIFY(colours.size() >= 2);
+        QCOMPARE(colours.first(), k_sourceColour);
+    }
+
+    void analysisConvertsFormat() {
+        QImage rgb888(8, 8, QImage::Format_RGB888);
+        rgb888.fill(k_sourceColour.value());
+        QVERIFY(sameAnalysis(analyseImage(rgb888), analyseImage(m_image)));
+    }
+
     void colourfulnessIsZeroForGrey() { QVERIFY(qFuzzyIsNull(analyseImage(solid(0xFF808080)).colourfulness)); }
 
     void colourfulnessIsPositiveForColour() { QVERIFY(analyseImage(m_image).colourfulness > 0); }
