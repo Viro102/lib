@@ -198,10 +198,28 @@ private slots:
         QVERIFY_THROWS_EXCEPTION(std::invalid_argument, future.result());
     }
 
-    void bundledSchemeShadowsCustom() {
+    void customSchemeOverridesBundled() {
         installCustomScheme(u":/schemes/dracula/medium/dark.txt"_s, u"caelestia"_s, u"default"_s);
         const auto data = dataFor(u"caelestia"_s, u"default"_s, Mode::Dark);
-        QCOMPARE(data.colours.background, Argb(0xFF0A0F0F));
+        const auto dracula = dataFor(u"dracula"_s, u"medium"_s, Mode::Dark);
+        QCOMPARE(allColours(data.colours), allColours(dracula.colours));
+        QCOMPARE(dataFor(u"caelestia"_s, u"default"_s, Mode::Light).colours.background, Argb(0xFFF6FAF9));
+    }
+
+    void customFlavourMergesIntoBundled() {
+        installCustomScheme(u":/schemes/dracula/medium/dark.txt"_s, u"gruvbox"_s, u"extra"_s);
+        const auto scheme = Scheme::forName(u"gruvbox"_s).result();
+        QVERIFY(scheme);
+        QCOMPARE(names(scheme->flavours()), (QStringList{ u"extra"_s, u"hard"_s, u"medium"_s, u"soft"_s }));
+        QCOMPARE(scheme->flavour(u"extra"_s)->modes(), QList<Mode>{ Mode::Dark });
+        QCOMPARE(scheme->flavour(u"hard"_s)->modes(), (QList<Mode>{ Mode::Light, Mode::Dark }));
+    }
+
+    void unreadableCustomFallsBackToBundled() {
+        const auto dir = caelestia::config::ConfigPaths::customSchemesDir() + u"/nord/medium"_s;
+        QVERIFY(QDir().mkpath(dir + u"/dark.txt"_s));
+        const auto data = dataFor(u"nord"_s, u"medium"_s, Mode::Dark);
+        QCOMPARE(data.colours.background, Argb(0xFF2E3440));
     }
 
     void customSchemeParsing() {

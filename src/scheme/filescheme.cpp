@@ -4,8 +4,10 @@
 #include <qfile.h>
 #include <qfileinfo.h>
 #include <qiodevice.h>
+#include <qset.h>
 #include <qtextstream.h>
 
+#include <algorithm>
 #include <stdexcept>
 #include <utility>
 
@@ -17,6 +19,8 @@ namespace caelestia::scheme {
 using Qt::StringLiterals::operator""_s;
 
 namespace {
+
+constexpr auto k_modes = { Mode::Light, Mode::Dark };
 
 QHash<QString, m3colours::Argb> parseColours(QIODevice& device) {
     QHash<QString, m3colours::Argb> colours;
@@ -39,16 +43,22 @@ QHash<QString, m3colours::Argb> parseColours(QIODevice& device) {
     return colours;
 }
 
-SchemeData parseScheme(const QString& path, const QString& name, const QString& flavour, Mode mode) {
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        throw std::invalid_argument(u"No such scheme: %1-%2-%3"_s.arg(name, flavour, modeName(mode)).toStdString());
+QHash<QString, m3colours::Argb> readFirst(const QStringList& paths) {
+    for (const auto& path : paths) {
+        QFile file(path);
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+            return parseColours(file);
+        qCWarning(lcScheme) << "Unable to read scheme" << path << file.errorString();
+    }
+    throw std::invalid_argument(u"No readable scheme among: %1"_s.arg(paths.join(u", ")).toStdString());
+}
 
-    const auto map = parseColours(file);
+SchemeData parseScheme(const QStringList& paths, const QString& name, const QString& flavour, Mode mode) {
+    const auto map = readFirst(paths);
     const auto colours = [&](QStringView key) {
         const auto it = map.constFind(key);
         if (it == map.cend()) {
-            qCWarning(lcScheme) << "Scheme" << path << "is missing colour" << key;
+            qCWarning(lcScheme) << "Scheme" << name << flavour << modeName(mode) << "is missing colour" << key;
             return m3colours::Argb{ 0 };
         }
         return *it;
@@ -66,49 +76,54 @@ SchemeData parseScheme(const QString& path, const QString& name, const QString& 
 #undef COLOUR
 }
 
-QList<Mode> modesIn(const QString& dir) {
+} // namespace
+
+QString FileScheme::key(const QString& flavour, Mode mode) {
+    return flavour + u'/' + modeName(mode);
+}
+
+std::shared_ptr<Scheme> FileScheme::open(const QStringList& roots, const QString& name) {
+    QSet<QString> flavourSet;
+    Paths paths;
+    for (const auto& root : roots) {
+        const auto dir = root + u'/' + name;
+        const auto flavours = QDir(dir).entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+        for (const auto& flavour : flavours) {
+            for (const auto mode : k_modes) {
+                const auto path = u"%1/%2/%3.txt"_s.arg(dir, flavour, modeName(mode));
+                if (!QFileInfo::exists(path))
+                    continue;
+                flavourSet.insert(flavour);
+                paths[key(flavour, mode)].append(path);
+            }
+        }
+    }
+
+    if (flavourSet.isEmpty())
+        return nullptr;
+
+    QStringList flavours(flavourSet.cbegin(), flavourSet.cend());
+    std::sort(flavours.begin(), flavours.end());
+    return std::make_shared<FileScheme>(name, std::move(flavours), std::move(paths));
+}
+
+FileScheme::FileScheme(QString name, QStringList flavours, Paths paths)
+    : Scheme(std::move(name), std::move(flavours))
+    , m_paths(std::move(paths)) {}
+
+QList<Mode> FileScheme::modes(const QString& flavour) const {
     QList<Mode> modes;
-    for (const auto mode : { Mode::Light, Mode::Dark }) {
-        if (QFileInfo::exists(dir + u"/%1.txt"_s.arg(modeName(mode))))
+    for (const auto mode : k_modes) {
+        if (m_paths.contains(key(flavour, mode)))
             modes.append(mode);
     }
     return modes;
 }
 
-} // namespace
-
-std::shared_ptr<Scheme> FileScheme::open(const QString& root, const QString& name) {
-    const auto dir = root + u'/' + name;
-    QStringList flavours;
-    QHash<QString, QList<Mode>> modes;
-    const auto entries = QDir(dir).entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
-    for (const auto& flavour : entries) {
-        auto found = modesIn(dir + u'/' + flavour);
-        if (found.isEmpty())
-            continue;
-        flavours.append(flavour);
-        modes.insert(flavour, std::move(found));
-    }
-
-    if (flavours.isEmpty())
-        return nullptr;
-    return std::make_shared<FileScheme>(dir, name, std::move(flavours), std::move(modes));
-}
-
-FileScheme::FileScheme(QString dir, QString name, QStringList flavours, QHash<QString, QList<Mode>> modes)
-    : Scheme(std::move(name), std::move(flavours))
-    , m_dir(std::move(dir))
-    , m_modes(std::move(modes)) {}
-
-QList<Mode> FileScheme::modes(const QString& flavour) const {
-    return m_modes.value(flavour);
-}
-
 QFuture<SchemeData> FileScheme::load(const QString& flavour, Mode mode) const {
-    const auto path = u"%1/%2/%3.txt"_s.arg(m_dir, flavour, modeName(mode));
-    return QtFuture::makeReadyValueFuture(path).then(
-        QtFuture::Launch::Async, [schemeName = name(), flavour, mode](const QString& p) {
-            return parseScheme(p, schemeName, flavour, mode);
+    return QtFuture::makeReadyValueFuture(m_paths.value(key(flavour, mode)))
+        .then(QtFuture::Launch::Async, [schemeName = name(), flavour, mode](const QStringList& paths) {
+            return parseScheme(paths, schemeName, flavour, mode);
         });
 }
 

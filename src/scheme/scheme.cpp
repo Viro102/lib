@@ -4,6 +4,7 @@
 #include <qfuture.h>
 #include <qset.h>
 
+#include <algorithm>
 #include <array>
 #include <bit>
 #include <cstddef>
@@ -28,7 +29,9 @@ Q_LOGGING_CATEGORY(lcScheme, "caelestia.scheme", QtInfoMsg)
 
 namespace {
 
-constexpr QStringView k_bundledRoot = u":/schemes";
+QStringList schemeRoots() {
+    return { config::ConfigPaths::customSchemesDir(), u":/schemes"_s };
+}
 
 } // namespace
 
@@ -71,18 +74,20 @@ Scheme::Scheme(QString name, QStringList flavours)
 
 QFuture<QList<std::shared_ptr<Scheme>>> Scheme::all() {
     return QtFuture::makeReadyVoidFuture().then(QtFuture::Launch::Async, [] {
+        const auto roots = schemeRoots();
+        QSet<QString> nameSet;
+        for (const auto& root : roots) {
+            const auto names = QDir(root).entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+            nameSet.unite(QSet<QString>(names.cbegin(), names.cend()));
+        }
+
+        QStringList names(nameSet.cbegin(), nameSet.cend());
+        std::sort(names.begin(), names.end());
+
         QList<std::shared_ptr<Scheme>> schemes;
-        QSet<QString> seen;
-        for (const auto& root : { k_bundledRoot.toString(), config::ConfigPaths::customSchemesDir() }) {
-            const auto names = QDir(root).entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
-            for (const auto& name : names) {
-                if (seen.contains(name))
-                    continue;
-                if (auto scheme = FileScheme::open(root, name)) {
-                    seen.insert(name);
-                    schemes.append(std::move(scheme));
-                }
-            }
+        for (const auto& name : std::as_const(names)) {
+            if (auto scheme = FileScheme::open(roots, name))
+                schemes.append(std::move(scheme));
         }
         return schemes;
     });
@@ -93,9 +98,7 @@ QFuture<std::shared_ptr<Scheme>> Scheme::forName(const QString& name) {
         return QtFuture::makeReadyValueFuture(std::shared_ptr<Scheme>());
 
     return QtFuture::makeReadyValueFuture(name).then(QtFuture::Launch::Async, [](const QString& n) {
-        if (auto bundled = FileScheme::open(k_bundledRoot.toString(), n))
-            return bundled;
-        return FileScheme::open(config::ConfigPaths::customSchemesDir(), n);
+        return FileScheme::open(schemeRoots(), n);
     });
 }
 

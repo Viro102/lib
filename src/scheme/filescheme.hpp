@@ -14,13 +14,15 @@ namespace caelestia::scheme {
 
 class FileScheme : public Scheme {
 public:
-    [[nodiscard]] static std::shared_ptr<Scheme> open(const QString& root, const QString& name);
+    using Paths = QHash<QString, QStringList>;
 
-    FileScheme(QString dir, QString name, QStringList flavours, QHash<QString, QList<Mode>> modes);
+    [[nodiscard]] static std::shared_ptr<Scheme> open(const QStringList& roots, const QString& name);
+    [[nodiscard]] static QString key(const QString& flavour, Mode mode);
+
+    FileScheme(QString name, QStringList flavours, Paths paths);
 
 private:
-    const QString m_dir;
-    const QHash<QString, QList<Mode>> m_modes;
+    const Paths m_paths;
 
     [[nodiscard]] QList<Mode> modes(const QString& flavour) const override;
     [[nodiscard]] QFuture<SchemeData> load(const QString& flavour, Mode mode) const override;
