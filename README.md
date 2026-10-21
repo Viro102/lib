@@ -4,13 +4,14 @@ A shared C++ library for [Caelestia](https://github.com/caelestia-dots).
 
 ## Modules
 
-| Module   | Contains                                                  |
-| -------- | --------------------------------------------------------- |
-| `config` | Basic access to `~/.config/caelestia/config.json` + paths |
-| `media`  | Image/video colour analysis                               |
-| `scheme` | Material 3 scheme generation                              |
-| `theme`  | Apply schemes to apps                                     |
-| `utils`  | File and blob caches                                      |
+| Module      | Contains                                                  |
+| ----------- | --------------------------------------------------------- |
+| `config`    | Basic access to `~/.config/caelestia/config.json` + paths |
+| `media`     | Image/video colour analysis                               |
+| `scheme`    | Material 3 scheme generation                              |
+| `theme`     | Apply schemes to apps                                     |
+| `utils`     | File and blob caches                                      |
+| `wallpaper` | Current wallpaper state and wallpaper-driven schemes      |
 
 ## Dependencies
 

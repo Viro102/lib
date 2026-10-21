@@ -1,0 +1,12 @@
+#pragma once
+
+#include <qfuture.h>
+#include <qstring.h>
+
+namespace caelestia::wallpaper {
+
+[[nodiscard]] QString defaultWallpaper();
+[[nodiscard]] QString currentWallpaper(bool* ok = nullptr);
+[[nodiscard]] QFuture<void> set(const QString& path, bool smart = true);
+
+} // namespace caelestia::wallpaper

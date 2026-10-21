@@ -61,6 +61,7 @@ add_subdirectory(src/utils)
 add_subdirectory(src/media)
 add_subdirectory(src/scheme)
 add_subdirectory(src/theme)
+add_subdirectory(src/wallpaper)
 
 add_library(caelestia SHARED)
 set_target_properties(caelestia PROPERTIES
@@ -81,6 +82,7 @@ target_link_libraries(caelestia
         caelestia-scheme
         caelestia-theme
         caelestia-utils
+        caelestia-wallpaper
 )
 
 install(TARGETS caelestia EXPORT caelestiaTargets)
