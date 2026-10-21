@@ -103,6 +103,14 @@ std::optional<SchemeData> fromJson(const QJsonObject& json) {
     return SchemeData{ .name = name, .flavour = flavour, .mode = *mode, .colours = result };
 }
 
+QFuture<SchemeData> defaultScheme() {
+    return Scheme::forName(u"caelestia"_s)
+        .then([](const std::shared_ptr<Scheme>& scheme) {
+            return scheme->flavour(u"default"_s)->data(Mode::Dark);
+        })
+        .unwrap();
+}
+
 bool saveState(const SchemeData& data) {
     QDir().mkpath(config::ConfigPaths::stateDir());
     QSaveFile file(statePath());
