@@ -110,11 +110,11 @@ private slots:
     }
 
     void setKeepsFileScheme() {
-        QVERIFY(scheme::saveState(scheme::Scheme::forName(u"catppuccin"_s)
-                .result()
-                ->flavour(u"latte"_s)
-                ->data(scheme::Mode::Light)
-                .result()));
+        const auto latte = scheme::Scheme::forName(u"catppuccin"_s).result()->flavour(u"latte"_s);
+        if (!latte) {
+            QFAIL("catppuccin has no latte flavour");
+        }
+        QVERIFY(scheme::saveState(latte->data(scheme::Mode::Light).result()));
 
         wallpaper::set(m_blue).waitForFinished();
 
@@ -125,7 +125,7 @@ private slots:
     }
 
     void setFallsBackToDefaultFlavourAndMode() {
-        auto seed = scheme::defaultScheme().result();
+        const auto seed = scheme::defaultScheme().result();
         QVERIFY(scheme::saveState(
             { .name = u"catppuccin"_s, .flavour = u"gone"_s, .mode = scheme::Mode::Light, .colours = seed.colours }));
 
@@ -145,7 +145,7 @@ private slots:
     }
 
     void setFallsBackToSmartVariantForDynamicScheme() {
-        auto seed = scheme::defaultScheme().result();
+        const auto seed = scheme::defaultScheme().result();
         QVERIFY(scheme::saveState(
             { .name = u"dynamic"_s, .flavour = u"gone"_s, .mode = scheme::Mode::Light, .colours = seed.colours }));
 
@@ -157,7 +157,7 @@ private slots:
     }
 
     void setPicksSmartOptionsForDynamicScheme() {
-        auto seed = scheme::defaultScheme().result();
+        const auto seed = scheme::defaultScheme().result();
         QVERIFY(scheme::saveState(
             { .name = u"dynamic"_s, .flavour = u"vibrant"_s, .mode = scheme::Mode::Light, .colours = seed.colours }));
 
@@ -174,7 +174,7 @@ private slots:
     }
 
     void setKeepsDynamicOptionsWithoutSmart() {
-        auto seed = scheme::defaultScheme().result();
+        const auto seed = scheme::defaultScheme().result();
         QVERIFY(scheme::saveState(
             { .name = u"dynamic"_s, .flavour = u"vibrant"_s, .mode = scheme::Mode::Light, .colours = seed.colours }));
 
