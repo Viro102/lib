@@ -125,10 +125,10 @@ enum class Mode : quint8 {
 };
 
 struct SchemeData {
-    const QString name;
-    const QString flavour;
-    const Mode mode;
-    const SchemeColours colours;
+    QString name;
+    QString flavour;
+    Mode mode;
+    SchemeColours colours;
 };
 
 struct NamedColour {
