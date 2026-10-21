@@ -152,6 +152,7 @@ class Flavour {
 public:
     [[nodiscard]] const QString& name() const;
     [[nodiscard]] QList<Mode> modes() const;
+    [[nodiscard]] Mode defaultMode() const;
     [[nodiscard]] QFuture<SchemeData> data(Mode mode) const;
 
 private:
@@ -176,6 +177,7 @@ public:
 
     [[nodiscard]] const QString& name() const;
     [[nodiscard]] QList<Flavour> flavours() const;
+    [[nodiscard]] Flavour defaultFlavour() const;
     [[nodiscard]] std::optional<Flavour> flavour(const QString& name) const;
 
 protected:

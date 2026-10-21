@@ -157,6 +157,11 @@ QList<Mode> Flavour::modes() const {
     return m_scheme->modes(m_name);
 }
 
+Mode Flavour::defaultMode() const {
+    const auto available = modes();
+    return available.contains(Mode::Dark) ? Mode::Dark : available.first();
+}
+
 QFuture<SchemeData> Flavour::data(Mode mode) const {
     return m_scheme->load(m_name, mode);
 }
@@ -217,6 +222,10 @@ QList<Flavour> Scheme::flavours() const {
     for (const auto& name : m_flavours)
         flavours.append(Flavour(shared_from_this(), name));
     return flavours;
+}
+
+Flavour Scheme::defaultFlavour() const {
+    return { shared_from_this(), m_flavours.first() };
 }
 
 std::optional<Flavour> Scheme::flavour(const QString& name) const {

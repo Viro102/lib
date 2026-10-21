@@ -351,6 +351,15 @@ private slots:
         QVERIFY(allColours(data.colours) != allColours(generate(k_sourceColour, k_variant, k_mode)));
     }
 
+    void defaultFlavourAndMode() {
+        const auto scheme = Scheme::forName(u"catppuccin"_s).result();
+        QVERIFY(scheme);
+        QCOMPARE(scheme->defaultFlavour().name(), scheme->flavours().constFirst().name());
+        QCOMPARE(flavourFor(scheme, u"mocha"_s).defaultMode(), Mode::Dark);
+        QCOMPARE(flavourFor(scheme, u"latte"_s).defaultMode(), Mode::Light);
+        QCOMPARE(Scheme::forColour(k_sourceColour)->defaultFlavour().defaultMode(), Mode::Dark);
+    }
+
     void stateRoundTrips() {
         const auto data = dataFor(u"catppuccin"_s, u"mocha"_s, Mode::Dark);
         QVERIFY(saveState(data));
