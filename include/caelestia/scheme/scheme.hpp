@@ -1,7 +1,7 @@
 #pragma once
 
-#include <qbytearray.h>
 #include <qfuture.h>
+#include <qjsonobject.h>
 #include <qlist.h>
 #include <qstring.h>
 
@@ -137,9 +137,13 @@ struct NamedColour {
 };
 
 QList<NamedColour> namedColours(const SchemeColours& colours);
-[[nodiscard]] std::optional<SchemeColours> coloursFromBytes(const QByteArray& bytes);
-[[nodiscard]] QByteArray coloursToBytes(const SchemeColours& colours);
 QString modeName(Mode mode);
+
+[[nodiscard]] QJsonObject toJson(const SchemeData& data);
+[[nodiscard]] std::optional<SchemeData> fromJson(const QJsonObject& json);
+
+bool saveState(const SchemeData& data);
+[[nodiscard]] std::optional<SchemeData> loadState();
 
 class Scheme;
 

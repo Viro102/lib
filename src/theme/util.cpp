@@ -24,7 +24,7 @@ QString dataDir() {
 }
 
 QString hex(m3colours::Argb colour) {
-    return u"%1"_s.arg(colour.value() & 0xFFFFFFu, 6, 16, QChar(u'0'));
+    return u"%1"_s.arg(colour.value() & 0xFFFFFFu, 6, 16, u'0');
 }
 
 bool writeFile(const QString& path, const QString& content) {

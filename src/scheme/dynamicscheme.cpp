@@ -4,10 +4,15 @@
 #include <qstringlist.h>
 
 #include <array>
+#include <bit>
+#include <cstddef>
+#include <cstring>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
 
 #include "caelestia/scheme/generator.hpp"
+#include "logging.hpp"
 #include "schemecache.hpp"
 
 namespace caelestia::scheme {
@@ -17,6 +22,23 @@ using Qt::StringLiterals::operator""_s;
 namespace {
 
 using m3colours::scheme::Variant;
+
+static_assert(std::is_trivially_copyable_v<SchemeColours>);
+
+std::optional<SchemeColours> coloursFromBytes(const QByteArray& bytes) {
+    if (bytes.size() != static_cast<qsizetype>(sizeof(SchemeColours))) {
+        qCWarning(lcScheme) << "Cached scheme has unexpected size:" << bytes.size();
+        return std::nullopt;
+    }
+
+    std::array<std::byte, sizeof(SchemeColours)> raw;
+    std::memcpy(raw.data(), bytes.constData(), raw.size());
+    return std::bit_cast<SchemeColours>(raw);
+}
+
+QByteArray coloursToBytes(const SchemeColours& colours) {
+    return { reinterpret_cast<const char*>(&colours), sizeof(colours) };
+}
 
 constexpr int k_maxSize = 1024 * 1024;
 constexpr int k_cacheVersion = 1;

@@ -3,8 +3,6 @@
 #include <qfuture.h>
 #include <qstring.h>
 
-#include <optional>
-
 #include "caelestia/scheme/scheme.hpp"
 
 #ifdef CAELESTIA_TESTING
@@ -31,9 +29,6 @@ private:
     [[nodiscard]] QString render(const QString& templatePath) const;
     [[nodiscard]] QString renderTemplate(const QString& name) const;
     void writeTemplate(const QString& name, const QString& path) const;
-
-    [[nodiscard]] static bool saveState(const scheme::SchemeData& scheme);
-    [[nodiscard]] static std::optional<scheme::SchemeData> loadState();
 
     void applySync() const;
     void applyTargets() const;

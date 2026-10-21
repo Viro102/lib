@@ -1,7 +1,6 @@
 #include "caelestia/theme/theme.hpp"
 
 #include <qcolor.h>
-#include <qdatastream.h>
 #include <qdir.h>
 #include <qfile.h>
 #include <qfileinfo.h>
@@ -12,7 +11,6 @@
 #include <qlockfile.h>
 #include <qprocess.h>
 #include <qregularexpression.h>
-#include <qsavefile.h>
 
 #include <algorithm>
 #include <array>
@@ -112,56 +110,11 @@ QString defaultIconTheme(scheme::Mode mode) {
     return mode == scheme::Mode::Dark ? cfg.iconThemeDark() : cfg.iconThemeLight();
 }
 
-QString schemeStatePath() {
-    return config::ConfigPaths::stateDir() + u"/scheme.bin"_s;
-}
-
 } // namespace
 
 Theme::Theme(scheme::SchemeData scheme)
     : m_scheme(std::move(scheme))
     , m_iconTheme(defaultIconTheme(m_scheme.mode)) {}
-
-bool Theme::saveState(const scheme::SchemeData& scheme) {
-    QDir().mkpath(config::ConfigPaths::stateDir());
-    QSaveFile file(schemeStatePath());
-    if (!file.open(QIODevice::WriteOnly)) {
-        qCWarning(lcTheme) << "Unable to open" << file.fileName() << file.errorString();
-        return false;
-    }
-
-    QDataStream out(&file);
-    out << scheme.name << scheme.flavour << scheme.mode << scheme::coloursToBytes(scheme.colours);
-    if (!file.commit()) {
-        qCWarning(lcTheme) << "Unable to write" << file.fileName() << file.errorString();
-        return false;
-    }
-    return true;
-}
-
-std::optional<scheme::SchemeData> Theme::loadState() {
-    QFile file(schemeStatePath());
-    if (!file.open(QIODevice::ReadOnly)) {
-        qCWarning(lcTheme) << "Unable to open" << file.fileName() << file.errorString();
-        return std::nullopt;
-    }
-
-    QString name;
-    QString flavour;
-    scheme::Mode mode;
-    QByteArray colours;
-    QDataStream in(&file);
-    in >> name >> flavour >> mode >> colours;
-    if (in.status() != QDataStream::Ok) {
-        qCWarning(lcTheme) << "Unable to read" << file.fileName();
-        return std::nullopt;
-    }
-
-    const auto parsed = scheme::coloursFromBytes(colours);
-    if (!parsed)
-        return std::nullopt;
-    return scheme::SchemeData{ .name = name, .flavour = flavour, .mode = mode, .colours = *parsed };
-}
 
 QFuture<void> Theme::apply() const {
     return QtFuture::makeReadyVoidFuture().then(QtFuture::Launch::Async, [theme = *this] {
@@ -218,13 +171,13 @@ void Theme::writeTemplate(const QString& name, const QString& path) const {
 
 void Theme::applySync() const {
     QDir().mkpath(config::ConfigPaths::stateDir());
-    const bool saved = saveState(m_scheme);
+    const bool saved = scheme::saveState(m_scheme);
 
     QLockFile lock(config::ConfigPaths::stateDir() + u"/theme.lock"_s);
     lock.lock();
 
     if (saved) {
-        if (auto latest = loadState()) {
+        if (auto latest = scheme::loadState()) {
             Theme(std::move(*latest)).applyTargets();
             return;
         }

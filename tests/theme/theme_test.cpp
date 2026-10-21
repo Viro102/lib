@@ -1,5 +1,4 @@
 #include <qcolor.h>
-#include <qdatastream.h>
 #include <qdir.h>
 #include <qdiriterator.h>
 #include <qfile.h>
@@ -241,37 +240,9 @@ private slots:
         QCOMPARE(readFile(out).trimmed(), u"default"_s);
     }
 
-    void stateRoundTrips() {
-        QVERIFY(theme::Theme::saveState(scheme(scheme::Mode::Light)));
-
-        const auto loaded = theme::Theme::loadState();
-        if (!loaded.has_value())
-            QFAIL("loadState returned nullopt");
-        QCOMPARE(loaded->name, u"test"_s);
-        QCOMPARE(loaded->flavour, u"default"_s);
-        QCOMPARE(loaded->mode, scheme::Mode::Light);
-        QCOMPARE(scheme::coloursToBytes(loaded->colours), scheme::coloursToBytes(m_colours));
-    }
-
-    void invalidStateIsRejected() {
-        const auto path = config::ConfigPaths::stateDir() + u"/scheme.bin"_s;
-
-        QFile::remove(path);
-        QVERIFY(!theme::Theme::loadState().has_value());
-
-        writeFile(path, "garbage");
-        QVERIFY(!theme::Theme::loadState().has_value());
-
-        QByteArray truncated;
-        QDataStream out(&truncated, QIODevice::WriteOnly);
-        out << u"test"_s << u"default"_s << scheme::Mode::Dark << QByteArray("abcd");
-        writeFile(path, truncated);
-        QVERIFY(!theme::Theme::loadState().has_value());
-    }
-
     void appliesNewestStateOnceLockIsReleased() {
         const auto stateDir = config::ConfigPaths::stateDir();
-        const auto statePath = stateDir + u"/scheme.bin"_s;
+        const auto statePath = stateDir + u"/scheme.json"_s;
         QVERIFY(QDir().mkpath(stateDir));
         QFile::remove(statePath);
 
@@ -283,7 +254,7 @@ private slots:
 
         auto newer = m_colours;
         newer.primary = m3colours::Argb{ 0xFF00FF00 };
-        QVERIFY(theme::Theme::saveState(
+        QVERIFY(scheme::saveState(
             { .name = u"newer"_s, .flavour = u"default"_s, .mode = scheme::Mode::Dark, .colours = newer }));
 
         lock.unlock();

@@ -1,17 +1,16 @@
 #include "caelestia/scheme/scheme.hpp"
 
 #include <qdir.h>
+#include <qfile.h>
 #include <qfuture.h>
+#include <qjsondocument.h>
+#include <qjsonvalue.h>
+#include <qsavefile.h>
 #include <qset.h>
 
 #include <algorithm>
-#include <array>
-#include <bit>
-#include <cstddef>
-#include <cstring>
 #include <memory>
 #include <optional>
-#include <type_traits>
 #include <utility>
 
 #include "caelestia/config/paths.hpp"
@@ -33,23 +32,109 @@ QStringList schemeRoots() {
     return { config::ConfigPaths::customSchemesDir(), u":/schemes"_s };
 }
 
+QString hex(m3colours::Argb colour) {
+    return u"%1"_s.arg(colour.value() & 0xFFFFFFu, 6, 16, u'0');
+}
+
+std::optional<m3colours::Argb> colourFromJson(const QJsonValue& value) {
+    const auto text = value.toString();
+    bool ok = false;
+    const auto rgb = text.toUInt(&ok, 16);
+    if (!ok || text.size() != 6)
+        return std::nullopt;
+    return m3colours::Argb{ 0xFF000000u | rgb };
+}
+
+QString statePath() {
+    return config::ConfigPaths::stateDir() + u"/scheme.json"_s;
+}
+
+std::optional<Mode> modeFromName(const QString& name) {
+    if (name == u"light"_s)
+        return Mode::Light;
+    if (name == u"dark"_s)
+        return Mode::Dark;
+    return std::nullopt;
+}
+
 } // namespace
 
-static_assert(std::is_trivially_copyable_v<SchemeColours>);
+QJsonObject toJson(const SchemeData& data) {
+    QJsonObject colours;
+    const auto named = namedColours(data.colours);
+    for (const auto& [name, colour] : named)
+        colours.insert(name.toString(), hex(colour));
 
-std::optional<SchemeColours> coloursFromBytes(const QByteArray& bytes) {
-    if (bytes.size() != static_cast<qsizetype>(sizeof(SchemeColours))) {
-        qCWarning(lcScheme) << "Cached scheme has unexpected size:" << bytes.size();
+    return {
+        { u"name"_s, data.name },
+        { u"flavour"_s, data.flavour },
+        { u"mode"_s, modeName(data.mode) },
+        { u"colours"_s, colours },
+    };
+}
+
+std::optional<SchemeData> fromJson(const QJsonObject& json) {
+    const auto name = json[u"name"_s].toString();
+    const auto flavour = json[u"flavour"_s].toString();
+    const auto mode = modeFromName(json[u"mode"_s].toString());
+    const auto colours = json[u"colours"_s].toObject();
+    if (name.isEmpty() || flavour.isEmpty() || !mode) {
+        qCWarning(lcScheme) << "Scheme state is missing name, flavour or mode";
         return std::nullopt;
     }
 
-    std::array<std::byte, sizeof(SchemeColours)> raw;
-    std::memcpy(raw.data(), bytes.constData(), raw.size());
-    return std::bit_cast<SchemeColours>(raw);
+    bool complete = true;
+    const auto colour = [&](const QString& key) {
+        const auto parsed = colourFromJson(colours[key]);
+        if (!parsed) {
+            qCWarning(lcScheme) << "Scheme state is missing colour" << key;
+            complete = false;
+            return m3colours::Argb{ 0 };
+        }
+        return *parsed;
+    };
+
+#define COLOUR(name) .name = colour(u## #name ""_s),
+    const SchemeColours result{ CAELESTIA_SCHEME_COLOURS(COLOUR) };
+#undef COLOUR
+
+    if (!complete)
+        return std::nullopt;
+    return SchemeData{ .name = name, .flavour = flavour, .mode = *mode, .colours = result };
 }
 
-QByteArray coloursToBytes(const SchemeColours& colours) {
-    return { reinterpret_cast<const char*>(&colours), sizeof(colours) };
+bool saveState(const SchemeData& data) {
+    QDir().mkpath(config::ConfigPaths::stateDir());
+    QSaveFile file(statePath());
+    if (!file.open(QIODevice::WriteOnly)) {
+        qCWarning(lcScheme) << "Unable to open" << file.fileName() << file.errorString();
+        return false;
+    }
+
+    file.write(QJsonDocument(toJson(data)).toJson(QJsonDocument::Compact));
+    if (!file.commit()) {
+        qCWarning(lcScheme) << "Unable to write" << file.fileName() << file.errorString();
+        return false;
+    }
+
+    return true;
+}
+
+std::optional<SchemeData> loadState() {
+    QFile file(statePath());
+    if (!file.open(QIODevice::ReadOnly)) {
+        qCWarning(lcScheme) << "Unable to open" << file.fileName() << file.errorString();
+        return std::nullopt;
+    }
+
+    QJsonParseError error;
+    const auto doc = QJsonDocument::fromJson(file.readAll(), &error);
+    if (!doc.isObject()) {
+        qCWarning(lcScheme) << "Invalid" << file.fileName() << error.errorString();
+        return std::nullopt;
+    }
+
+    return fromJson(doc.object());
 }
 
 Flavour::Flavour(std::shared_ptr<const Scheme> scheme, QString name)

@@ -3,6 +3,8 @@
 #include <qfile.h>
 #include <qfileinfo.h>
 #include <qimage.h>
+#include <qjsondocument.h>
+#include <qjsonobject.h>
 #include <qtemporarydir.h>
 #include <qtest.h>
 
@@ -14,6 +16,7 @@
 #include "caelestia/config/paths.hpp"
 #include "caelestia/scheme/generator.hpp"
 #include "caelestia/scheme/scheme.hpp"
+#include "common.hpp"
 #include "helpers.hpp"
 #include "schemecache.hpp"
 
@@ -79,6 +82,8 @@ private:
     QTemporaryDir m_root;
     QString m_path;
 
+    [[nodiscard]] static QString statePath() { return caelestia::config::ConfigPaths::stateDir() + u"/scheme.json"_s; }
+
     void installCustomScheme(const QString& source, const QString& name, const QString& flavour) {
         const auto dir = caelestia::config::ConfigPaths::customSchemesDir() + u"/%1/%2"_s.arg(name, flavour);
         QVERIFY(QDir().mkpath(dir));
@@ -91,6 +96,7 @@ private slots:
         QVERIFY(m_root.isValid());
         qputenv("XDG_CACHE_HOME", m_root.path().toUtf8());
         qputenv("XDG_CONFIG_HOME", m_root.path().toUtf8());
+        qputenv("XDG_STATE_HOME", m_root.path().toUtf8());
 
         QImage image(8, 8, QImage::Format_RGB32);
         image.fill(k_sourceColour.value());
@@ -343,6 +349,44 @@ private slots:
         const auto data = flavourFor(Scheme::forColour(k_sourceColour), u"fruitsalad"_s).data(k_mode).result();
         QCOMPARE(allColours(data.colours), allColours(seeded));
         QVERIFY(allColours(data.colours) != allColours(generate(k_sourceColour, k_variant, k_mode)));
+    }
+
+    void stateRoundTrips() {
+        const auto data = dataFor(u"catppuccin"_s, u"mocha"_s, Mode::Dark);
+        QVERIFY(saveState(data));
+
+        const auto json = readJson(statePath());
+        QCOMPARE(json[u"name"_s].toString(), u"catppuccin"_s);
+        QCOMPARE(json[u"flavour"_s].toString(), u"mocha"_s);
+        QCOMPARE(json[u"mode"_s].toString(), u"dark"_s);
+        QCOMPARE(json[u"colours"_s][u"primary"_s].toString(), u"c2c1ff"_s);
+
+        const auto loaded = loadState();
+        if (!loaded)
+            QFAIL("loadState returned nullopt");
+        QCOMPARE(loaded->name, data.name);
+        QCOMPARE(loaded->flavour, data.flavour);
+        QCOMPARE(loaded->mode, data.mode);
+        QCOMPARE(allColours(loaded->colours), allColours(data.colours));
+    }
+
+    void invalidStateIsRejected() {
+        QFile::remove(statePath());
+        QVERIFY(!loadState().has_value());
+
+        writeFile(statePath(), "garbage");
+        QVERIFY(!loadState().has_value());
+
+        auto json = toJson(dataFor(u"catppuccin"_s, u"mocha"_s, Mode::Dark));
+        auto colours = json[u"colours"_s].toObject();
+        colours.remove(u"primary"_s);
+        json[u"colours"_s] = colours;
+        writeFile(statePath(), QJsonDocument(json).toJson());
+        QVERIFY(!loadState().has_value());
+
+        json[u"mode"_s] = u"dusk"_s;
+        writeFile(statePath(), QJsonDocument(json).toJson());
+        QVERIFY(!loadState().has_value());
     }
 
     void dynamicSchemeIgnoresWrongSizedCache() {
