@@ -124,6 +124,38 @@ private slots:
         QCOMPARE(data.mode, scheme::Mode::Light);
     }
 
+    void setFallsBackToDefaultFlavourAndMode() {
+        auto seed = scheme::defaultScheme().result();
+        QVERIFY(scheme::saveState(
+            { .name = u"catppuccin"_s, .flavour = u"gone"_s, .mode = scheme::Mode::Light, .colours = seed.colours }));
+
+        wallpaper::set(m_blue).waitForFinished();
+
+        auto data = loaded();
+        QCOMPARE(data.name, u"catppuccin"_s);
+        QCOMPARE(data.flavour, u"frappe"_s);
+        QCOMPARE(data.mode, scheme::Mode::Dark);
+
+        QVERIFY(scheme::saveState(
+            { .name = u"gone"_s, .flavour = u"gone"_s, .mode = scheme::Mode::Dark, .colours = seed.colours }));
+        wallpaper::set(m_blue).waitForFinished();
+        data = loaded();
+        QCOMPARE(data.name, seed.name);
+        QCOMPARE(data.flavour, seed.flavour);
+    }
+
+    void setFallsBackToSmartVariantForDynamicScheme() {
+        auto seed = scheme::defaultScheme().result();
+        QVERIFY(scheme::saveState(
+            { .name = u"dynamic"_s, .flavour = u"gone"_s, .mode = scheme::Mode::Light, .colours = seed.colours }));
+
+        wallpaper::set(m_blue, false).waitForFinished();
+
+        const auto data = loaded();
+        QCOMPARE(data.flavour, u"tonalspot"_s);
+        QCOMPARE(data.mode, scheme::Mode::Light);
+    }
+
     void setPicksSmartOptionsForDynamicScheme() {
         auto seed = scheme::defaultScheme().result();
         QVERIFY(scheme::saveState(

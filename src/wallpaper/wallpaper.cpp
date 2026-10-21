@@ -60,14 +60,22 @@ scheme::Mode smartMode(const media::Analysis& analysis) {
 
 QFuture<scheme::SchemeData> dynamicScheme(const QString& path, const scheme::SchemeData& state, bool smart) {
     return media::analyseForPath(path)
-        .then([state, smart](const media::Analysis& analysis) {
-            if (analysis.colours.isEmpty())
+        .then([path, state, smart](const media::Analysis& analysis) {
+            if (analysis.colours.isEmpty()) {
+                qCWarning(lcWallpaper) << "No colours found in" << path << "- keeping current colours";
                 return QtFuture::makeReadyValueFuture(state);
+            }
 
-            const auto flavourName = smart ? smartFlavour(analysis) : state.flavour;
+            const auto scheme = scheme::Scheme::forColour(analysis.colours.first());
+            auto flavour = smart ? std::nullopt : scheme->flavour(state.flavour);
+            if (!flavour) {
+                if (!smart)
+                    qCWarning(lcWallpaper) << "Unknown variant" << state.flavour << "- using smart variant";
+                flavour = scheme->flavour(smartFlavour(analysis));
+            }
+
             const auto mode = smart ? smartMode(analysis) : state.mode;
-            const auto flavour = scheme::Scheme::forColour(analysis.colours.first())->flavour(flavourName);
-            return flavour ? flavour->data(mode) : QtFuture::makeReadyValueFuture(state);
+            return flavour->data(mode);
         })
         .unwrap();
 }
@@ -75,10 +83,27 @@ QFuture<scheme::SchemeData> dynamicScheme(const QString& path, const scheme::Sch
 QFuture<scheme::SchemeData> fileScheme(const scheme::SchemeData& state) {
     return scheme::Scheme::forName(state.name)
         .then([state](const std::shared_ptr<scheme::Scheme>& scheme) {
-            const auto flavour = scheme ? scheme->flavour(state.flavour) : std::nullopt;
-            if (!flavour || !flavour->modes().contains(state.mode))
-                return QtFuture::makeReadyValueFuture(state);
-            return flavour->data(state.mode);
+            if (!scheme) {
+                qCWarning(lcWallpaper) << "Scheme" << state.name << "no longer exists - using default scheme";
+                return scheme::defaultScheme();
+            }
+
+            auto flavour = scheme->flavour(state.flavour);
+            if (!flavour) {
+                flavour = scheme->defaultFlavour();
+                qCWarning(lcWallpaper) << "Flavour" << state.flavour << "for scheme" << state.name
+                                       << "no longer exists - using" << flavour->name();
+            }
+
+            auto mode = state.mode;
+            if (!flavour->modes().contains(mode)) {
+                mode = flavour->defaultMode();
+                qCWarning(lcWallpaper) << "Mode" << scheme::modeName(state.mode) << "for scheme"
+                                       << u"%1 (%2)"_s.arg(state.name, flavour->name()) << "no longer exists - using"
+                                       << scheme::modeName(mode);
+            }
+
+            return flavour->data(mode);
         })
         .unwrap();
 }
