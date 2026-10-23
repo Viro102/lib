@@ -15,7 +15,7 @@ using Qt::StringLiterals::operator""_s;
 
 namespace {
 
-Q_LOGGING_CATEGORY(logConfig, "caelestia.config")
+Q_LOGGING_CATEGORY(logConfig, "caelestia.config", QtInfoMsg)
 
 QJsonObject setNested(QJsonObject object, const QList<QStringView>& keys, qsizetype index, const QJsonValue& value) {
     const auto key = keys[index].toString();
