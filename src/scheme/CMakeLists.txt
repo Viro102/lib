@@ -10,9 +10,10 @@ target_link_libraries(caelestia-scheme
         caelestia-config
         caelestia-media
         caelestia-utils
-        m3colours::m3colours
         Qt::Core
         Qt::Gui
+    PRIVATE
+        m3colours::m3colours
 )
 
 file(GLOB_RECURSE scheme_files

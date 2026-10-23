@@ -32,16 +32,15 @@ struct Hsl {
     int lightness;
 };
 
-Hsl toHsl(m3colours::Argb colour) {
-    const auto qc = QColor::fromRgb(colour.red(), colour.green(), colour.blue());
+Hsl toHsl(QColor colour) {
     return {
-        .hue = std::max(0, qc.hslHue()),
-        .saturation = qRound(qc.hslSaturationF() * 100),
-        .lightness = qRound(qc.lightnessF() * 100),
+        .hue = std::max(0, colour.hslHue()),
+        .saturation = qRound(colour.hslSaturationF() * 100),
+        .lightness = qRound(colour.lightnessF() * 100),
     };
 }
 
-std::optional<QString> colourForm(m3colours::Argb colour, QStringView form) {
+std::optional<QString> colourForm(QColor colour, QStringView form) {
     if (form == u"hex")
         return hex(colour);
     if (form == u"hexalpha")
@@ -69,8 +68,8 @@ std::optional<QString> colourForm(m3colours::Argb colour, QStringView form) {
     return std::nullopt;
 }
 
-std::optional<QString> fill(QStringView field, const QHash<QStringView, m3colours::Argb>& colours,
-    const QHash<QStringView, QString>& variables) {
+std::optional<QString> fill(
+    QStringView field, const QHash<QStringView, QColor>& colours, const QHash<QStringView, QString>& variables) {
     const auto inner = field.trimmed();
     if (const auto it = variables.constFind(inner); it != variables.cend())
         return *it;
@@ -130,7 +129,7 @@ QString Theme::render(const QString& templatePath) const {
     }
     const auto content = QString::fromUtf8(file.readAll());
 
-    QHash<QStringView, m3colours::Argb> colours;
+    QHash<QStringView, QColor> colours;
     const auto named = scheme::namedColours(m_scheme.colours);
     for (const auto& [name, colour] : named)
         colours.insert(name, colour);

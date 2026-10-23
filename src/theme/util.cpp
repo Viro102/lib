@@ -23,8 +23,8 @@ QString dataDir() {
     return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
 }
 
-QString hex(m3colours::Argb colour) {
-    return u"%1"_s.arg(colour.value() & 0xFFFFFFu, 6, 16, u'0');
+QString hex(QColor colour) {
+    return colour.name().sliced(1);
 }
 
 bool writeFile(const QString& path, const QString& content) {

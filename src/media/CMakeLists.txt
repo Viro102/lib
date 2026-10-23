@@ -16,9 +16,9 @@ target_link_libraries(caelestia-media
     PUBLIC
         caelestia-headers
         caelestia-utils
-        m3colours::m3colours
         Qt::Core
         Qt::Gui
     PRIVATE
+        m3colours::m3colours
         PkgConfig::libav
 )

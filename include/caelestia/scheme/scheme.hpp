@@ -1,11 +1,10 @@
 #pragma once
 
+#include <qcolor.h>
 #include <qfuture.h>
 #include <qjsonobject.h>
 #include <qlist.h>
 #include <qstring.h>
-
-#include <m3colours/scheme.hpp>
 
 #include <memory>
 #include <optional>
@@ -14,109 +13,109 @@ namespace caelestia::scheme {
 
 struct SchemeColours {
     // Material 3, 2025 spec
-    m3colours::Argb primaryPaletteKeyColour;
-    m3colours::Argb secondaryPaletteKeyColour;
-    m3colours::Argb tertiaryPaletteKeyColour;
-    m3colours::Argb neutralPaletteKeyColour;
-    m3colours::Argb neutralVariantPaletteKeyColour;
-    m3colours::Argb errorPaletteKeyColour;
-    m3colours::Argb background;
-    m3colours::Argb onBackground;
-    m3colours::Argb surface;
-    m3colours::Argb surfaceDim;
-    m3colours::Argb surfaceBright;
-    m3colours::Argb surfaceContainerLowest;
-    m3colours::Argb surfaceContainerLow;
-    m3colours::Argb surfaceContainer;
-    m3colours::Argb surfaceContainerHigh;
-    m3colours::Argb surfaceContainerHighest;
-    m3colours::Argb onSurface;
-    m3colours::Argb onSurfaceVariant;
-    m3colours::Argb outline;
-    m3colours::Argb outlineVariant;
-    m3colours::Argb inverseSurface;
-    m3colours::Argb inverseOnSurface;
-    m3colours::Argb primary;
-    m3colours::Argb onPrimary;
-    m3colours::Argb primaryContainer;
-    m3colours::Argb onPrimaryContainer;
-    m3colours::Argb primaryFixed;
-    m3colours::Argb primaryFixedDim;
-    m3colours::Argb onPrimaryFixed;
-    m3colours::Argb onPrimaryFixedVariant;
-    m3colours::Argb inversePrimary;
-    m3colours::Argb secondary;
-    m3colours::Argb onSecondary;
-    m3colours::Argb secondaryContainer;
-    m3colours::Argb onSecondaryContainer;
-    m3colours::Argb secondaryFixed;
-    m3colours::Argb secondaryFixedDim;
-    m3colours::Argb onSecondaryFixed;
-    m3colours::Argb onSecondaryFixedVariant;
-    m3colours::Argb tertiary;
-    m3colours::Argb onTertiary;
-    m3colours::Argb tertiaryContainer;
-    m3colours::Argb onTertiaryContainer;
-    m3colours::Argb tertiaryFixed;
-    m3colours::Argb tertiaryFixedDim;
-    m3colours::Argb onTertiaryFixed;
-    m3colours::Argb onTertiaryFixedVariant;
-    m3colours::Argb error;
-    m3colours::Argb onError;
-    m3colours::Argb errorContainer;
-    m3colours::Argb onErrorContainer;
+    QColor primaryPaletteKeyColour;
+    QColor secondaryPaletteKeyColour;
+    QColor tertiaryPaletteKeyColour;
+    QColor neutralPaletteKeyColour;
+    QColor neutralVariantPaletteKeyColour;
+    QColor errorPaletteKeyColour;
+    QColor background;
+    QColor onBackground;
+    QColor surface;
+    QColor surfaceDim;
+    QColor surfaceBright;
+    QColor surfaceContainerLowest;
+    QColor surfaceContainerLow;
+    QColor surfaceContainer;
+    QColor surfaceContainerHigh;
+    QColor surfaceContainerHighest;
+    QColor onSurface;
+    QColor onSurfaceVariant;
+    QColor outline;
+    QColor outlineVariant;
+    QColor inverseSurface;
+    QColor inverseOnSurface;
+    QColor primary;
+    QColor onPrimary;
+    QColor primaryContainer;
+    QColor onPrimaryContainer;
+    QColor primaryFixed;
+    QColor primaryFixedDim;
+    QColor onPrimaryFixed;
+    QColor onPrimaryFixedVariant;
+    QColor inversePrimary;
+    QColor secondary;
+    QColor onSecondary;
+    QColor secondaryContainer;
+    QColor onSecondaryContainer;
+    QColor secondaryFixed;
+    QColor secondaryFixedDim;
+    QColor onSecondaryFixed;
+    QColor onSecondaryFixedVariant;
+    QColor tertiary;
+    QColor onTertiary;
+    QColor tertiaryContainer;
+    QColor onTertiaryContainer;
+    QColor tertiaryFixed;
+    QColor tertiaryFixedDim;
+    QColor onTertiaryFixed;
+    QColor onTertiaryFixedVariant;
+    QColor error;
+    QColor onError;
+    QColor errorContainer;
+    QColor onErrorContainer;
 
     // Extended material
-    m3colours::Argb success;
-    m3colours::Argb onSuccess;
-    m3colours::Argb successContainer;
-    m3colours::Argb onSuccessContainer;
+    QColor success;
+    QColor onSuccess;
+    QColor successContainer;
+    QColor onSuccessContainer;
 
     // Terminal colours
-    m3colours::Argb term0;
-    m3colours::Argb term1;
-    m3colours::Argb term2;
-    m3colours::Argb term3;
-    m3colours::Argb term4;
-    m3colours::Argb term5;
-    m3colours::Argb term6;
-    m3colours::Argb term7;
-    m3colours::Argb term8;
-    m3colours::Argb term9;
-    m3colours::Argb term10;
-    m3colours::Argb term11;
-    m3colours::Argb term12;
-    m3colours::Argb term13;
-    m3colours::Argb term14;
-    m3colours::Argb term15;
+    QColor term0;
+    QColor term1;
+    QColor term2;
+    QColor term3;
+    QColor term4;
+    QColor term5;
+    QColor term6;
+    QColor term7;
+    QColor term8;
+    QColor term9;
+    QColor term10;
+    QColor term11;
+    QColor term12;
+    QColor term13;
+    QColor term14;
+    QColor term15;
 
     // Named colours
-    m3colours::Argb rosewater;
-    m3colours::Argb flamingo;
-    m3colours::Argb pink;
-    m3colours::Argb mauve;
-    m3colours::Argb red;
-    m3colours::Argb maroon;
-    m3colours::Argb peach;
-    m3colours::Argb yellow;
-    m3colours::Argb green;
-    m3colours::Argb teal;
-    m3colours::Argb sky;
-    m3colours::Argb sapphire;
-    m3colours::Argb blue;
-    m3colours::Argb lavender;
+    QColor rosewater;
+    QColor flamingo;
+    QColor pink;
+    QColor mauve;
+    QColor red;
+    QColor maroon;
+    QColor peach;
+    QColor yellow;
+    QColor green;
+    QColor teal;
+    QColor sky;
+    QColor sapphire;
+    QColor blue;
+    QColor lavender;
 
     // KDE colours (for Qt theming)
-    m3colours::Argb klink;
-    m3colours::Argb klinkSelection;
-    m3colours::Argb kvisited;
-    m3colours::Argb kvisitedSelection;
-    m3colours::Argb knegative;
-    m3colours::Argb knegativeSelection;
-    m3colours::Argb kneutral;
-    m3colours::Argb kneutralSelection;
-    m3colours::Argb kpositive;
-    m3colours::Argb kpositiveSelection;
+    QColor klink;
+    QColor klinkSelection;
+    QColor kvisited;
+    QColor kvisitedSelection;
+    QColor knegative;
+    QColor knegativeSelection;
+    QColor kneutral;
+    QColor kneutralSelection;
+    QColor kpositive;
+    QColor kpositiveSelection;
 };
 
 enum class Mode : quint8 {
@@ -133,7 +132,7 @@ struct SchemeData {
 
 struct NamedColour {
     QStringView name;
-    m3colours::Argb colour;
+    QColor colour;
 };
 
 QList<NamedColour> namedColours(const SchemeColours& colours);
@@ -172,7 +171,7 @@ public:
 
     [[nodiscard]] static QFuture<QList<std::shared_ptr<Scheme>>> all();
     [[nodiscard]] static QFuture<std::shared_ptr<Scheme>> forName(const QString& name);
-    [[nodiscard]] static std::shared_ptr<Scheme> forColour(m3colours::Argb colour);
+    [[nodiscard]] static std::shared_ptr<Scheme> forColour(QColor colour);
     [[nodiscard]] static QFuture<std::shared_ptr<Scheme>> forMedia(const QString& path);
 
     [[nodiscard]] const QString& name() const;

@@ -53,7 +53,7 @@ QString hueColour(int r, int g, int b, int brightness, bool pale) {
     return u"grey"_s;
 }
 
-QString papirusColour(m3colours::Argb colour) {
+QString papirusColour(QColor colour) {
     const int r = colour.red();
     const int g = colour.green();
     const int b = colour.blue();
@@ -69,7 +69,7 @@ QString papirusColour(m3colours::Argb colour) {
     return hueColour(r, g, b, brightness, saturation < 60 && brightness > 180);
 }
 
-void syncPapirus(m3colours::Argb primary) {
+void syncPapirus(QColor primary) {
     if (QStandardPaths::findExecutable(u"papirus-folders"_s).isEmpty())
         return;
 

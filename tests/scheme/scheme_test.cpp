@@ -1,3 +1,4 @@
+#include <qdatastream.h>
 #include <qdir.h>
 #include <qdiriterator.h>
 #include <qfile.h>
@@ -21,29 +22,33 @@
 #include "schemecache.hpp"
 
 using namespace caelestia::scheme;
-using m3colours::Argb;
-using m3colours::scheme::Variant;
 using Qt::StringLiterals::operator""_s;
 
 namespace {
 
-constexpr Argb k_sourceColour{ 0xFF2962FF };
+const QColor k_sourceColour = QColor::fromRgba(0xFF2962FF);
 
 constexpr std::array k_variantNames = {
-    std::pair{ Variant::Monochrome, QStringView(u"monochrome") },
-    std::pair{ Variant::Neutral, QStringView(u"neutral") },
-    std::pair{ Variant::TonalSpot, QStringView(u"tonalspot") },
-    std::pair{ Variant::Vibrant, QStringView(u"vibrant") },
-    std::pair{ Variant::Expressive, QStringView(u"expressive") },
-    std::pair{ Variant::Fidelity, QStringView(u"fidelity") },
-    std::pair{ Variant::Content, QStringView(u"content") },
-    std::pair{ Variant::Rainbow, QStringView(u"rainbow") },
-    std::pair{ Variant::FruitSalad, QStringView(u"fruitsalad") },
-    std::pair{ Variant::Cmf, QStringView(u"cmf") },
+    std::pair{ DynamicVariant::Monochrome, QStringView(u"monochrome") },
+    std::pair{ DynamicVariant::Neutral, QStringView(u"neutral") },
+    std::pair{ DynamicVariant::TonalSpot, QStringView(u"tonalspot") },
+    std::pair{ DynamicVariant::Vibrant, QStringView(u"vibrant") },
+    std::pair{ DynamicVariant::Expressive, QStringView(u"expressive") },
+    std::pair{ DynamicVariant::Fidelity, QStringView(u"fidelity") },
+    std::pair{ DynamicVariant::Content, QStringView(u"content") },
+    std::pair{ DynamicVariant::Rainbow, QStringView(u"rainbow") },
+    std::pair{ DynamicVariant::FruitSalad, QStringView(u"fruitsalad") },
+    std::pair{ DynamicVariant::Cmf, QStringView(u"cmf") },
 };
 
 QByteArray toBytes(const SchemeColours& colours) {
-    return { reinterpret_cast<const char*>(&colours), sizeof(colours) };
+    QByteArray bytes;
+    QDataStream stream(&bytes, QIODevice::WriteOnly);
+    stream.setVersion(QDataStream::Qt_6_0);
+    const auto named = namedColours(colours);
+    for (const auto& [name, colour] : named)
+        stream << colour.rgba();
+    return bytes;
 }
 
 QStringList names(const QList<std::shared_ptr<Scheme>>& schemes) {
@@ -99,7 +104,7 @@ private slots:
         qputenv("XDG_STATE_HOME", m_root.path().toUtf8());
 
         QImage image(8, 8, QImage::Format_RGB32);
-        image.fill(k_sourceColour.value());
+        image.fill(k_sourceColour.rgba());
         m_path = m_root.filePath(u"wallpaper.png"_s);
         QVERIFY(image.save(m_path));
     }
@@ -118,8 +123,8 @@ private slots:
         QCOMPARE(data.name, u"caelestia"_s);
         QCOMPARE(data.flavour, u"default"_s);
         QCOMPARE(data.mode, Mode::Dark);
-        QCOMPARE(data.colours.background, Argb(0xFF0A0F0F));
-        QCOMPARE(data.colours.onBackground, Argb(0xFFDCE8E6));
+        QCOMPARE(data.colours.background, QColor::fromRgba(0xFF0A0F0F));
+        QCOMPARE(data.colours.onBackground, QColor::fromRgba(0xFFDCE8E6));
     }
 
     void bundledSchemeLightMode() {
@@ -211,7 +216,7 @@ private slots:
         const auto data = dataFor(u"caelestia"_s, u"default"_s, Mode::Dark);
         const auto dracula = dataFor(u"dracula"_s, u"medium"_s, Mode::Dark);
         QCOMPARE(allColours(data.colours), allColours(dracula.colours));
-        QCOMPARE(dataFor(u"caelestia"_s, u"default"_s, Mode::Light).colours.background, Argb(0xFFF6FAF9));
+        QCOMPARE(dataFor(u"caelestia"_s, u"default"_s, Mode::Light).colours.background, QColor::fromRgba(0xFFF6FAF9));
     }
 
     void customFlavourMergesIntoBundled() {
@@ -227,7 +232,7 @@ private slots:
         const auto dir = caelestia::config::ConfigPaths::customSchemesDir() + u"/nord/medium"_s;
         QVERIFY(QDir().mkpath(dir + u"/dark.txt"_s));
         const auto data = dataFor(u"nord"_s, u"medium"_s, Mode::Dark);
-        QCOMPARE(data.colours.background, Argb(0xFF2E3440));
+        QCOMPARE(data.colours.background, QColor::fromRgba(0xFF2E3440));
     }
 
     void customSchemeParsing() {
@@ -247,9 +252,9 @@ private slots:
 
         const auto data = dataFor(u"handwritten"_s, u"custom"_s, Mode::Dark);
         const auto dracula = dataFor(u"dracula"_s, u"medium"_s, Mode::Dark);
-        QCOMPARE(data.colours.background, Argb(0xFF112233));
-        QCOMPARE(data.colours.onBackground, Argb(0xFF445566));
-        QCOMPARE(data.colours.primary, Argb(0xFFABCDEF));
+        QCOMPARE(data.colours.background, QColor::fromRgba(0xFF112233));
+        QCOMPARE(data.colours.onBackground, QColor::fromRgba(0xFF445566));
+        QCOMPARE(data.colours.primary, QColor::fromRgba(0xFFABCDEF));
         QCOMPARE(data.colours.secondary, dracula.colours.secondary);
         QCOMPARE(data.colours.surface, dracula.colours.surface);
         QCOMPARE(data.colours.outline, dracula.colours.outline);
@@ -278,16 +283,16 @@ private slots:
         file.close();
 
         const auto data = dataFor(u"onedark"_s, u"default"_s, Mode::Dark);
-        QCOMPARE(data.colours.background, Argb(0xFF121317));
+        QCOMPARE(data.colours.background, QColor::fromRgba(0xFF121317));
     }
 
     void namedColoursMatchStruct() {
-        const auto colours = generate(k_sourceColour, Variant::TonalSpot, Mode::Dark);
+        const auto colours = generate(k_sourceColour, DynamicVariant::TonalSpot, Mode::Dark);
         const auto named = namedColours(colours);
         const auto all = allColours(colours);
         QCOMPARE(named.size(), static_cast<qsizetype>(all.size()));
         for (qsizetype i = 0; i < named.size(); ++i)
-            QVERIFY2(named[i].colour == all[static_cast<size_t>(i)], named[i].name.toUtf8().constData());
+            QVERIFY2(named[i].colour == all[i], named[i].name.toUtf8().constData());
     }
 
     void modeNames() {
@@ -314,14 +319,14 @@ private slots:
         QCOMPARE(data.name, u"dynamic"_s);
         QCOMPARE(data.flavour, u"tonalspot"_s);
         QCOMPARE(data.mode, Mode::Dark);
-        QCOMPARE(allColours(data.colours), allColours(generate(k_sourceColour, Variant::TonalSpot, Mode::Dark)));
+        QCOMPARE(allColours(data.colours), allColours(generate(k_sourceColour, DynamicVariant::TonalSpot, Mode::Dark)));
     }
 
     void schemeForColourLightMode() {
         const auto data = flavourFor(Scheme::forColour(k_sourceColour), u"vibrant"_s).data(Mode::Light).result();
         QCOMPARE(data.flavour, u"vibrant"_s);
         QCOMPARE(data.mode, Mode::Light);
-        QCOMPARE(allColours(data.colours), allColours(generate(k_sourceColour, Variant::Vibrant, Mode::Light)));
+        QCOMPARE(allColours(data.colours), allColours(generate(k_sourceColour, DynamicVariant::Vibrant, Mode::Light)));
     }
 
     void schemeForMediaMatchesColour() {
@@ -339,9 +344,9 @@ private slots:
     void schemeForMissingMediaIsNull() { QVERIFY(!Scheme::forMedia(m_root.filePath(u"missing.png"_s)).result()); }
 
     void dynamicSchemeUsesCache() {
-        constexpr auto k_variant = Variant::FruitSalad;
+        constexpr auto k_variant = DynamicVariant::FruitSalad;
         constexpr auto k_mode = Mode::Dark;
-        const auto seeded = generate(Argb(0xFFFF0000), Variant::Vibrant, Mode::Light);
+        const auto seeded = generate(QColor::fromRgba(0xFFFF0000), DynamicVariant::Vibrant, Mode::Light);
         const auto key = SchemeCache::keyFor(k_sourceColour, k_variant, k_mode);
         SchemeCache::instance().store(key, toBytes(seeded));
         QCOMPARE(SchemeCache::instance().lookup(key).result(), toBytes(seeded));
@@ -399,10 +404,10 @@ private slots:
     }
 
     void dynamicSchemeIgnoresWrongSizedCache() {
-        constexpr auto k_variant = Variant::Rainbow;
+        constexpr auto k_variant = DynamicVariant::Rainbow;
         constexpr auto k_mode = Mode::Light;
         const auto key = SchemeCache::keyFor(k_sourceColour, k_variant, k_mode);
-        const QByteArray bad(static_cast<qsizetype>(sizeof(SchemeColours)) - 1, '\x7f');
+        const QByteArray bad(7, '\x7f');
         SchemeCache::instance().store(key, bad);
         QCOMPARE(SchemeCache::instance().lookup(key).result(), bad);
 

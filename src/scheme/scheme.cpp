@@ -32,17 +32,13 @@ QStringList schemeRoots() {
     return { config::ConfigPaths::customSchemesDir(), u":/schemes"_s };
 }
 
-QString hex(m3colours::Argb colour) {
-    return u"%1"_s.arg(colour.value() & 0xFFFFFFu, 6, 16, u'0');
-}
-
-std::optional<m3colours::Argb> colourFromJson(const QJsonValue& value) {
+std::optional<QColor> colourFromJson(const QJsonValue& value) {
     const auto text = value.toString();
     bool ok = false;
     const auto rgb = text.toUInt(&ok, 16);
     if (!ok || text.size() != 6)
         return std::nullopt;
-    return m3colours::Argb{ 0xFF000000u | rgb };
+    return QColor::fromRgba(0xFF000000u | rgb);
 }
 
 QString statePath() {
@@ -63,7 +59,7 @@ QJsonObject toJson(const SchemeData& data) {
     QJsonObject colours;
     const auto named = namedColours(data.colours);
     for (const auto& [name, colour] : named)
-        colours.insert(name.toString(), hex(colour));
+        colours.insert(name.toString(), colour.name().sliced(1));
 
     return {
         { u"name"_s, data.name },
@@ -84,12 +80,12 @@ std::optional<SchemeData> fromJson(const QJsonObject& json) {
     }
 
     bool complete = true;
-    const auto colour = [&](const QString& key) {
+    const auto colour = [&](const QString& key) -> QColor {
         const auto parsed = colourFromJson(colours[key]);
         if (!parsed) {
             qCWarning(lcScheme) << "Scheme state is missing colour" << key;
             complete = false;
-            return m3colours::Argb{ 0 };
+            return {};
         }
         return *parsed;
     };
@@ -200,7 +196,7 @@ QFuture<std::shared_ptr<Scheme>> Scheme::forName(const QString& name) {
     });
 }
 
-std::shared_ptr<Scheme> Scheme::forColour(m3colours::Argb colour) {
+std::shared_ptr<Scheme> Scheme::forColour(QColor colour) {
     return std::make_shared<DynamicScheme>(colour);
 }
 

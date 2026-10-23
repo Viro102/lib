@@ -23,8 +23,8 @@ namespace {
 
 constexpr auto k_modes = { Mode::Light, Mode::Dark };
 
-QHash<QString, m3colours::Argb> parseColours(QIODevice& device) {
-    QHash<QString, m3colours::Argb> colours;
+QHash<QString, QColor> parseColours(QIODevice& device) {
+    QHash<QString, QColor> colours;
     QTextStream in(&device);
     while (!in.atEnd()) {
         const auto line = in.readLine().trimmed();
@@ -39,7 +39,7 @@ QHash<QString, m3colours::Argb> parseColours(QIODevice& device) {
         if (value.startsWith(u'#'))
             value = value.sliced(1);
 
-        colours.insert(parts[0], m3colours::Argb{ 0xFF000000u | value.toUInt(nullptr, 16) });
+        colours.insert(parts[0], QColor::fromRgba(0xFF000000u | value.toUInt(nullptr, 16)));
     }
     return colours;
 }
@@ -53,12 +53,12 @@ std::optional<SchemeColours> readScheme(const QString& path) {
 
     const auto map = parseColours(file);
     bool complete = true;
-    const auto colours = [&](QStringView key) {
+    const auto colours = [&](QStringView key) -> QColor {
         const auto it = map.constFind(key);
         if (it == map.cend()) {
             qCWarning(lcScheme) << "Scheme" << path << "is missing colour" << key;
             complete = false;
-            return m3colours::Argb{ 0 };
+            return {};
         }
         return *it;
     };

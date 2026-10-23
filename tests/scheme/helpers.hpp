@@ -1,12 +1,14 @@
 #pragma once
 
-#include <m3colours/common.hpp>
-
-#include <array>
-#include <bit>
+#include <qcolor.h>
+#include <qlist.h>
 
 #include "caelestia/scheme/scheme.hpp"
 
-inline auto allColours(const caelestia::scheme::SchemeColours& colours) {
-    return std::bit_cast<std::array<m3colours::Argb, sizeof(colours) / sizeof(m3colours::Argb)>>(colours);
+inline QList<QColor> allColours(const caelestia::scheme::SchemeColours& colours) {
+    QList<QColor> out;
+    const auto named = caelestia::scheme::namedColours(colours);
+    for (const auto& [name, colour] : named)
+        out.append(colour);
+    return out;
 }

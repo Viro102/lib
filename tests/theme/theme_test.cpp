@@ -8,9 +8,6 @@
 #include <qtemporarydir.h>
 #include <qtest.h>
 
-#include <array>
-#include <bit>
-
 #include "caelestia/config/config.hpp"
 #include "caelestia/scheme/scheme.hpp"
 #include "caelestia/theme/theme.hpp"
@@ -41,8 +38,7 @@ class TestTheme : public QObject {
 
 private:
     QTemporaryDir m_root;
-    scheme::SchemeColours m_colours =
-        std::bit_cast<scheme::SchemeColours>(std::array<quint32, sizeof(scheme::SchemeColours) / sizeof(quint32)>{});
+    scheme::SchemeColours m_colours;
 
     [[nodiscard]] scheme::SchemeData scheme(scheme::Mode mode = scheme::Mode::Dark) const {
         return { .name = u"test"_s, .flavour = u"default"_s, .mode = mode, .colours = m_colours };
@@ -57,10 +53,10 @@ private slots:
         qputenv("XDG_STATE_HOME", m_root.filePath(u"state"_s).toUtf8());
         qunsetenv("HYPRLAND_INSTANCE_SIGNATURE");
 
-        m_colours.primary = m3colours::Argb{ 0xFF2962FF };
-        m_colours.surface = m3colours::Argb{ 0xFF101418 };
-        m_colours.onSurface = m3colours::Argb{ 0xFFE0E3E8 };
-        m_colours.term1 = m3colours::Argb{ 0x80FF0000 };
+        m_colours.primary = QColor::fromRgba(0xFF2962FF);
+        m_colours.surface = QColor::fromRgba(0xFF101418);
+        m_colours.onSurface = QColor::fromRgba(0xFFE0E3E8);
+        m_colours.term1 = QColor::fromRgba(0x80FF0000);
     }
 
     void init() {
@@ -253,7 +249,7 @@ private slots:
         QTRY_VERIFY(QFileInfo::exists(statePath));
 
         auto newer = m_colours;
-        newer.primary = m3colours::Argb{ 0xFF00FF00 };
+        newer.primary = QColor::fromRgba(0xFF00FF00);
         QVERIFY(scheme::saveState(
             { .name = u"newer"_s, .flavour = u"default"_s, .mode = scheme::Mode::Dark, .colours = newer }));
 

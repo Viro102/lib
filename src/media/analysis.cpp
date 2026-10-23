@@ -13,6 +13,7 @@
 #include <cmath>
 #include <span>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "analysiscache.hpp"
@@ -40,8 +41,8 @@ QByteArray serialise(const Analysis& analysis) {
     stream.setVersion(QDataStream::Qt_6_0);
     stream << static_cast<quint32>(analysis.colours.size());
     for (const auto& colour : analysis.colours)
-        stream << colour.value();
-    stream << analysis.dominant.value() << analysis.colourfulness << analysis.luminance << analysis.tone;
+        stream << colour.rgba();
+    stream << analysis.dominant.rgba() << analysis.colourfulness << analysis.luminance << analysis.tone;
     return data;
 }
 
@@ -55,11 +56,11 @@ Analysis deserialise(const QByteArray& data) {
     for (quint32 i = 0; i < count && stream.status() == QDataStream::Ok; ++i) {
         quint32 value = 0;
         stream >> value;
-        analysis.colours << m3colours::Argb{ value };
+        analysis.colours << QColor::fromRgba(value);
     }
     quint32 dominant = 0;
     stream >> dominant >> analysis.colourfulness >> analysis.luminance >> analysis.tone;
-    analysis.dominant = m3colours::Argb{ dominant };
+    analysis.dominant = QColor::fromRgba(dominant);
 
     return stream.status() == QDataStream::Ok && stream.atEnd() ? analysis : Analysis{};
 }
@@ -113,10 +114,14 @@ Analysis analysePixels(std::span<const m3colours::Argb> pixels) {
 
     const auto quant = m3colours::quantise::celebi(unique, k_maxColours);
     const auto scored = m3colours::score::scoreByCutoff(quant.colourToCount);
+    QList<QColor> colours;
+    colours.reserve(static_cast<qsizetype>(scored.size()));
+    for (const auto colour : scored)
+        colours.append(QColor::fromRgba(colour.value()));
 
     return {
-        .colours = { scored.begin(), scored.end() },
-        .dominant = unique.pixels[best],
+        .colours = std::move(colours),
+        .dominant = QColor::fromRgba(unique.pixels[best].value()),
         .colourfulness = std::sqrt(varRg + varYb) + 0.3 * std::sqrt(meanRg * meanRg + meanYb * meanYb),
         .luminance = sumLuminance / n,
         .tone = m3colours::Hct(mean).tone(),

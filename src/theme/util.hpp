@@ -1,9 +1,8 @@
 #pragma once
 
+#include <qcolor.h>
 #include <qloggingcategory.h>
 #include <qstring.h>
-
-#include <m3colours/common.hpp>
 
 namespace caelestia::theme {
 
@@ -12,7 +11,7 @@ Q_DECLARE_LOGGING_CATEGORY(lcTheme)
 [[nodiscard]] QString configDir();
 [[nodiscard]] QString dataDir();
 
-[[nodiscard]] QString hex(m3colours::Argb colour);
+[[nodiscard]] QString hex(QColor colour);
 
 bool writeFile(const QString& path, const QString& content);
 

@@ -1,8 +1,8 @@
 #include "caelestia/scheme/generator.hpp"
 
 #include <m3colours/blend.hpp>
-#include <m3colours/quantise.hpp>
-#include <m3colours/score.hpp>
+#include <m3colours/hct.hpp>
+#include <m3colours/scheme.hpp>
 
 #include <array>
 
@@ -12,7 +12,6 @@ namespace {
 
 using m3colours::Argb;
 using m3colours::Hct;
-using m3colours::scheme::Variant;
 
 constexpr std::array k_gruvboxLight = {
     0xFFFDF9F3,
@@ -92,31 +91,31 @@ constexpr std::array k_kColours = {
     0xff27ae60,
 };
 
-m3colours::scheme::DynamicScheme schemeForVariant(Variant variant, Argb sourceColour, bool isDark) {
+m3colours::scheme::DynamicScheme schemeForVariant(DynamicVariant variant, Argb sourceColour, bool isDark) {
     const Hct hct(sourceColour);
 
     using namespace m3colours::scheme;
 
     switch (variant) {
-    case Variant::Monochrome:
+    case DynamicVariant::Monochrome:
         return SchemeMonochrome(hct, isDark, 0.0, SpecVersion::Spec2025);
-    case Variant::Neutral:
+    case DynamicVariant::Neutral:
         return SchemeNeutral(hct, isDark, 0.0, SpecVersion::Spec2025);
-    case Variant::TonalSpot:
+    case DynamicVariant::TonalSpot:
         return SchemeTonalSpot(hct, isDark, 0.0, SpecVersion::Spec2025);
-    case Variant::Vibrant:
+    case DynamicVariant::Vibrant:
         return SchemeVibrant(hct, isDark, 0.0, SpecVersion::Spec2025);
-    case Variant::Expressive:
+    case DynamicVariant::Expressive:
         return SchemeExpressive(hct, isDark, 0.0, SpecVersion::Spec2025);
-    case Variant::Fidelity:
+    case DynamicVariant::Fidelity:
         return SchemeFidelity(hct, isDark, 0.0, SpecVersion::Spec2025);
-    case Variant::Content:
+    case DynamicVariant::Content:
         return SchemeContent(hct, isDark, 0.0, SpecVersion::Spec2025);
-    case Variant::Rainbow:
+    case DynamicVariant::Rainbow:
         return SchemeRainbow(hct, isDark, 0.0, SpecVersion::Spec2025);
-    case Variant::FruitSalad:
+    case DynamicVariant::FruitSalad:
         return SchemeFruitSalad(hct, isDark, 0.0, SpecVersion::Spec2025);
-    case Variant::Cmf:
+    case DynamicVariant::Cmf:
         return SchemeCmf(hct, isDark, 0.0);
     }
 
@@ -141,8 +140,8 @@ Argb grayscale(Argb colour, Mode mode) {
     return hct.toArgb();
 }
 
-Argb adjustNeutral(Argb colour, Variant flavour) {
-    if (flavour != Variant::Neutral)
+Argb adjustNeutral(Argb colour, DynamicVariant flavour) {
+    if (flavour != DynamicVariant::Neutral)
         return colour;
 
     Hct hct(colour);
@@ -150,24 +149,32 @@ Argb adjustNeutral(Argb colour, Variant flavour) {
     return hct.toArgb();
 }
 
-Argb adjusted(Argb colour, Argb blendColour, Variant flavour, Mode mode, qreal toneBoost) {
-    if (flavour == Variant::Monochrome)
-        return grayscale(Argb{ colour }, mode);
+QColor adjustGrayscale(Argb colour, DynamicVariant flavour, Mode mode) {
+    colour = adjustNeutral(colour, flavour);
 
-    Hct hct(m3colours::blend::harmonise(Argb{ colour }, blendColour));
+    if (flavour == DynamicVariant::Monochrome)
+        return QColor::fromRgba(grayscale(colour, mode).value());
+    return QColor::fromRgba(colour.value());
+}
+
+QColor adjusted(Argb colour, Argb blendColour, DynamicVariant flavour, Mode mode, qreal toneBoost) {
+    if (flavour == DynamicVariant::Monochrome)
+        return QColor::fromRgba(grayscale(colour, mode).value());
+
+    Hct hct(m3colours::blend::harmonise(colour, blendColour));
     hct.setTone(hct.tone() * (1.0 + toneBoost));
 
-    if (flavour == Variant::Neutral)
+    if (flavour == DynamicVariant::Neutral)
         hct.setChroma(hct.chroma() - 15);
 
-    return hct.toArgb();
+    return QColor::fromRgba(hct.toArgb().value());
 }
 
 } // namespace
 
-SchemeColours generate(Argb sourceColour, Variant flavour, Mode mode) {
+SchemeColours generate(QColor sourceColour, DynamicVariant flavour, Mode mode) {
     const auto isDark = mode == Mode::Dark;
-    const auto scheme = schemeForVariant(flavour, sourceColour, isDark);
+    const auto scheme = schemeForVariant(flavour, Argb{ sourceColour.rgba() }, isDark);
     const auto paletteColour = scheme.primaryPaletteKeyColour();
     const auto primary = scheme.primary();
     const auto onPrimaryFixedVariant = scheme.onPrimaryFixedVariant();
@@ -175,7 +182,7 @@ SchemeColours generate(Argb sourceColour, Variant flavour, Mode mode) {
     const auto termRef = isDark ? k_gruvboxDark : k_gruvboxLight;
     const auto namedRef = isDark ? k_catppuccinDark : k_catppuccinLight;
 
-#define COLOUR(name) .name = scheme.name()
+#define COLOUR(name) .name = QColor::fromRgba(adjustNeutral(scheme.name(), flavour).value())
 #define TERM(i)                                                                                                        \
     .term##i = adjusted(Argb{ termRef[i] }, paletteColour, flavour, mode, (i < 8 ? 0.35 : 0.2) * (isDark ? 1.0 : -1.0))
 #define NAMED(name, i) .name = adjusted(Argb{ namedRef[i] }, paletteColour, flavour, mode, isDark ? 0.05 : -0.2)
@@ -236,10 +243,10 @@ SchemeColours generate(Argb sourceColour, Variant flavour, Mode mode) {
         COLOUR(errorContainer),
         COLOUR(onErrorContainer),
 
-        .success = adjustNeutral(Argb{ isDark ? 0xFFB5CCBA : 0xFF4F6354 }, flavour),
-        .onSuccess = adjustNeutral(Argb{ isDark ? 0xFF213528 : 0xFFFFFFFF }, flavour),
-        .successContainer = adjustNeutral(Argb{ isDark ? 0xFF374B3E : 0xFFD1E8D5 }, flavour),
-        .onSuccessContainer = adjustNeutral(Argb{ isDark ? 0xFFD1E9D6 : 0xFF0C1F13 }, flavour),
+        .success = adjustGrayscale(Argb{ isDark ? 0xFFB5CCBA : 0xFF4F6354 }, flavour, mode),
+        .onSuccess = adjustGrayscale(Argb{ isDark ? 0xFF213528 : 0xFFFFFFFF }, flavour, mode),
+        .successContainer = adjustGrayscale(Argb{ isDark ? 0xFF374B3E : 0xFFD1E8D5 }, flavour, mode),
+        .onSuccessContainer = adjustGrayscale(Argb{ isDark ? 0xFFD1E9D6 : 0xFF0C1F13 }, flavour, mode),
 
         TERM(0),
         TERM(1),

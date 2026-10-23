@@ -10,19 +10,17 @@
 #include "videopixels.hpp"
 
 using namespace caelestia::media;
-using m3colours::Argb;
 using Qt::StringLiterals::operator""_s;
 
 namespace {
 
-constexpr Argb k_sourceColour{ 0xFF2962FF };
-constexpr Argb k_otherColour{ 0xFFD50000 };
+const QColor k_sourceColour = QColor::fromRgba(0xFF2962FF);
+const QColor k_otherColour = QColor::fromRgba(0xFFD50000);
 constexpr int k_tolerance = 4;
 
-bool closeTo(Argb a, Argb b) {
-    return qAbs(qRed(a.value()) - qRed(b.value())) <= k_tolerance &&
-           qAbs(qGreen(a.value()) - qGreen(b.value())) <= k_tolerance &&
-           qAbs(qBlue(a.value()) - qBlue(b.value())) <= k_tolerance;
+bool closeTo(QColor a, QColor b) {
+    return qAbs(a.red() - b.red()) <= k_tolerance && qAbs(a.green() - b.green()) <= k_tolerance &&
+           qAbs(a.blue() - b.blue()) <= k_tolerance;
 }
 
 bool sameAnalysis(const Analysis& a, const Analysis& b) {
@@ -53,7 +51,7 @@ private slots:
         QVERIFY(m_root.isValid());
         qputenv("XDG_CACHE_HOME", m_root.path().toUtf8());
 
-        m_image = solid(k_sourceColour.value());
+        m_image = solid(k_sourceColour.rgba());
         m_path = m_root.filePath(u"wallpaper.png"_s);
         QVERIFY(m_image.save(m_path));
     }
@@ -75,16 +73,16 @@ private slots:
     }
 
     void dominantPrefersMostCommon() {
-        auto image = solid(k_sourceColour.value());
+        auto image = solid(k_sourceColour.rgba());
         for (int x = 0; x < 2; ++x)
-            image.setPixel(x, 0, k_otherColour.value());
+            image.setPixel(x, 0, k_otherColour.rgba());
         QCOMPARE(analyseImage(image).dominant, k_sourceColour);
     }
 
     void coloursRankDominantFirst() {
-        auto image = solid(k_sourceColour.value());
+        auto image = solid(k_sourceColour.rgba());
         for (int x = 0; x < 2; ++x)
-            image.setPixel(x, 0, k_otherColour.value());
+            image.setPixel(x, 0, k_otherColour.rgba());
 
         const auto colours = analyseImage(image).colours;
         QVERIFY(colours.size() >= 2);
@@ -93,7 +91,7 @@ private slots:
 
     void analysisConvertsFormat() {
         QImage rgb888(8, 8, QImage::Format_RGB888);
-        rgb888.fill(k_sourceColour.value());
+        rgb888.fill(k_sourceColour.rgba());
         QVERIFY(sameAnalysis(analyseImage(rgb888), analyseImage(m_image)));
     }
 
@@ -114,7 +112,7 @@ private slots:
     void ignoresTransparentPixels() {
         QImage image(8, 8, QImage::Format_ARGB32);
         image.fill(Qt::transparent);
-        image.setPixel(0, 0, k_sourceColour.value());
+        image.setPixel(0, 0, k_sourceColour.rgba());
         QCOMPARE(analyseImage(image).dominant, k_sourceColour);
     }
 
@@ -178,8 +176,8 @@ private slots:
     }
 
     void analysisIsIndependentOfImageSize() {
-        const auto small = analyseImage(solid(k_sourceColour.value()));
-        const auto large = analyseImage(solid(k_sourceColour.value(), 2048, 1024));
+        const auto small = analyseImage(solid(k_sourceColour.rgba()));
+        const auto large = analyseImage(solid(k_sourceColour.rgba(), 2048, 1024));
         QVERIFY(!large.colours.isEmpty());
         QCOMPARE(large.dominant, small.dominant);
         QCOMPARE(large.colours.first(), small.colours.first());

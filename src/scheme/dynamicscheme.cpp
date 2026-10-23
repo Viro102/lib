@@ -1,17 +1,16 @@
 #include "dynamicscheme.hpp"
 
 #include <qbytearray.h>
+#include <qdatastream.h>
+#include <qiodevice.h>
 #include <qstringlist.h>
 
 #include <array>
-#include <bit>
-#include <cstddef>
-#include <cstring>
 #include <stdexcept>
-#include <type_traits>
 #include <utility>
 
 #include "caelestia/scheme/generator.hpp"
+#include "colournames.hpp"
 #include "logging.hpp"
 #include "schemecache.hpp"
 
@@ -21,42 +20,53 @@ using Qt::StringLiterals::operator""_s;
 
 namespace {
 
-using m3colours::scheme::Variant;
-
-static_assert(std::is_trivially_copyable_v<SchemeColours>);
-
 std::optional<SchemeColours> coloursFromBytes(const QByteArray& bytes) {
-    if (bytes.size() != static_cast<qsizetype>(sizeof(SchemeColours))) {
+    QDataStream stream(bytes);
+    stream.setVersion(QDataStream::Qt_6_0);
+    const auto colour = [&stream] {
+        QRgb rgba = 0;
+        stream >> rgba;
+        return QColor::fromRgba(rgba);
+    };
+
+#define COLOUR(name) .name = colour(),
+    const SchemeColours colours{ CAELESTIA_SCHEME_COLOURS(COLOUR) };
+#undef COLOUR
+
+    if (stream.status() != QDataStream::Ok || !stream.atEnd()) {
         qCWarning(lcScheme) << "Cached scheme has unexpected size:" << bytes.size();
         return std::nullopt;
     }
-
-    std::array<std::byte, sizeof(SchemeColours)> raw;
-    std::memcpy(raw.data(), bytes.constData(), raw.size());
-    return std::bit_cast<SchemeColours>(raw);
+    return colours;
 }
 
 QByteArray coloursToBytes(const SchemeColours& colours) {
-    return { reinterpret_cast<const char*>(&colours), sizeof(colours) };
+    QByteArray bytes;
+    QDataStream stream(&bytes, QIODevice::WriteOnly);
+    stream.setVersion(QDataStream::Qt_6_0);
+#define COLOUR(name) stream << colours.name.rgba();
+    CAELESTIA_SCHEME_COLOURS(COLOUR)
+#undef COLOUR
+    return bytes;
 }
 
 constexpr int k_maxSize = 1024 * 1024;
-constexpr int k_cacheVersion = 1;
+constexpr int k_cacheVersion = 2;
 
 constexpr std::array k_variants = {
-    std::pair{ Variant::Monochrome, QStringView(u"monochrome") },
-    std::pair{ Variant::Neutral, QStringView(u"neutral") },
-    std::pair{ Variant::TonalSpot, QStringView(u"tonalspot") },
-    std::pair{ Variant::Vibrant, QStringView(u"vibrant") },
-    std::pair{ Variant::Expressive, QStringView(u"expressive") },
-    std::pair{ Variant::Fidelity, QStringView(u"fidelity") },
-    std::pair{ Variant::Content, QStringView(u"content") },
-    std::pair{ Variant::Rainbow, QStringView(u"rainbow") },
-    std::pair{ Variant::FruitSalad, QStringView(u"fruitsalad") },
-    std::pair{ Variant::Cmf, QStringView(u"cmf") },
+    std::pair{ DynamicVariant::Monochrome, QStringView(u"monochrome") },
+    std::pair{ DynamicVariant::Neutral, QStringView(u"neutral") },
+    std::pair{ DynamicVariant::TonalSpot, QStringView(u"tonalspot") },
+    std::pair{ DynamicVariant::Vibrant, QStringView(u"vibrant") },
+    std::pair{ DynamicVariant::Expressive, QStringView(u"expressive") },
+    std::pair{ DynamicVariant::Fidelity, QStringView(u"fidelity") },
+    std::pair{ DynamicVariant::Content, QStringView(u"content") },
+    std::pair{ DynamicVariant::Rainbow, QStringView(u"rainbow") },
+    std::pair{ DynamicVariant::FruitSalad, QStringView(u"fruitsalad") },
+    std::pair{ DynamicVariant::Cmf, QStringView(u"cmf") },
 };
 
-QString toString(Variant variant) {
+QString toString(DynamicVariant variant) {
     for (const auto& [v, name] : k_variants) {
         if (v == variant)
             return name.toString();
@@ -64,7 +74,7 @@ QString toString(Variant variant) {
     Q_UNREACHABLE_RETURN(QString());
 }
 
-Variant toVariant(QStringView name) {
+DynamicVariant toVariant(QStringView name) {
     for (const auto& [variant, n] : k_variants) {
         if (n == name)
             return variant;
@@ -82,7 +92,7 @@ QStringList variantNames() {
 
 } // namespace
 
-DynamicScheme::DynamicScheme(m3colours::Argb colour)
+DynamicScheme::DynamicScheme(QColor colour)
     : Scheme(u"dynamic"_s, variantNames())
     , m_colour(colour) {}
 
@@ -114,9 +124,9 @@ SchemeCache& SchemeCache::instance() {
     return s_instance;
 }
 
-QString SchemeCache::keyFor(m3colours::Argb sourceColour, Variant flavour, Mode mode) {
+QString SchemeCache::keyFor(QColor sourceColour, DynamicVariant flavour, Mode mode) {
     return utils::Cache::keyFor(
-        u"%1|%2|%3"_s.arg(QString::number(sourceColour.value(), 16), toString(flavour), modeName(mode)));
+        u"%1|%2|%3"_s.arg(QString::number(sourceColour.rgba(), 16), toString(flavour), modeName(mode)));
 }
 
 } // namespace caelestia::scheme

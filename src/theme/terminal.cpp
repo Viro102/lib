@@ -14,16 +14,16 @@ using Qt::StringLiterals::operator""_s;
 
 namespace {
 
-QString ansi(m3colours::Argb colour, const QString& code) {
+QString ansi(QColor colour, const QString& code) {
     return u"\x1b]%1;rgb:%2/%3/%4\x1b\\"_s.arg(
         code, hex(colour).sliced(0, 2), hex(colour).sliced(2, 2), hex(colour).sliced(4, 2));
 }
 
-QString ansi(m3colours::Argb colour, int code) {
+QString ansi(QColor colour, int code) {
     return ansi(colour, QString::number(code));
 }
 
-QString ansi(m3colours::Argb colour, int code, int index) {
+QString ansi(QColor colour, int code, int index) {
     return ansi(colour, u"%1;%2"_s.arg(code).arg(index));
 }
 
