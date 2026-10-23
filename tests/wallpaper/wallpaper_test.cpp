@@ -41,8 +41,6 @@ private:
     QString m_blue;
     QString m_grey;
 
-    [[nodiscard]] QString statePath() const { return config::ConfigPaths::stateDir() + u"/wallpaper/path.txt"_s; }
-
     [[nodiscard]] scheme::SchemeData loaded() const {
         const auto state = scheme::loadState();
         if (!state)
@@ -70,8 +68,8 @@ private slots:
     }
 
     void init() {
-        QFile::remove(statePath());
-        QFile::remove(config::ConfigPaths::stateDir() + u"/scheme.json"_s);
+        QFile::remove(wallpaper::statePath());
+        QFile::remove(scheme::statePath());
     }
 
     void currentFallsBackWhenUnset() {
@@ -81,12 +79,12 @@ private slots:
     }
 
     void currentFallsBackWhenFileIsGone() {
-        writeFile(statePath(), m_root.filePath(u"gone.png"_s).toUtf8());
+        writeFile(wallpaper::statePath(), m_root.filePath(u"gone.png"_s).toUtf8());
         QVERIFY(wallpaper::currentWallpaper().endsWith(u"/wallpaper.webp"_s));
     }
 
     void currentReadsState() {
-        writeFile(statePath(), (m_blue + u"\n"_s).toUtf8());
+        writeFile(wallpaper::statePath(), (m_blue + u"\n"_s).toUtf8());
         QCOMPARE(wallpaper::currentWallpaper(), m_blue);
     }
 
@@ -96,13 +94,13 @@ private slots:
 
         auto future = wallpaper::set(text);
         QVERIFY_THROWS_EXCEPTION(std::invalid_argument, future.waitForFinished());
-        QVERIFY(!QFileInfo::exists(statePath()));
+        QVERIFY(!QFileInfo::exists(wallpaper::statePath()));
     }
 
     void setWritesStateAndDefaultScheme() {
         wallpaper::set(m_blue).waitForFinished();
 
-        QCOMPARE(readFile(statePath()), m_blue);
+        QCOMPARE(readFile(wallpaper::statePath()), m_blue);
         QCOMPARE(wallpaper::currentWallpaper(), m_blue);
         const auto data = loaded();
         QCOMPARE(data.name, u"caelestia"_s);

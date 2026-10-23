@@ -41,10 +41,6 @@ std::optional<QColor> colourFromJson(const QJsonValue& value) {
     return QColor::fromRgba(0xFF000000u | rgb);
 }
 
-QString statePath() {
-    return config::ConfigPaths::stateDir() + u"/scheme.json"_s;
-}
-
 std::optional<Mode> modeFromName(const QString& name) {
     if (name == u"light"_s)
         return Mode::Light;
@@ -67,6 +63,10 @@ QJsonObject toJson(const SchemeData& data) {
         { u"mode"_s, modeName(data.mode) },
         { u"colours"_s, colours },
     };
+}
+
+QString statePath() {
+    return config::ConfigPaths::stateDir() + u"/scheme.json"_s;
 }
 
 std::optional<SchemeData> fromJson(const QJsonObject& json) {

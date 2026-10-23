@@ -5,6 +5,7 @@
 
 namespace caelestia::wallpaper {
 
+[[nodiscard]] QString statePath();
 [[nodiscard]] QString defaultWallpaper();
 [[nodiscard]] QString currentWallpaper(bool* ok = nullptr);
 [[nodiscard]] QFuture<void> set(const QString& path, bool smart = true);

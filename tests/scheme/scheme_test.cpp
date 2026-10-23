@@ -87,8 +87,6 @@ private:
     QTemporaryDir m_root;
     QString m_path;
 
-    [[nodiscard]] static QString statePath() { return caelestia::config::ConfigPaths::stateDir() + u"/scheme.json"_s; }
-
     void installCustomScheme(const QString& source, const QString& name, const QString& flavour) {
         const auto dir = caelestia::config::ConfigPaths::customSchemesDir() + u"/%1/%2"_s.arg(name, flavour);
         QVERIFY(QDir().mkpath(dir));

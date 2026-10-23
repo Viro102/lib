@@ -142,6 +142,7 @@ QString modeName(Mode mode);
 [[nodiscard]] std::optional<SchemeData> fromJson(const QJsonObject& json);
 
 QFuture<SchemeData> defaultScheme();
+[[nodiscard]] QString statePath();
 bool saveState(const SchemeData& data);
 [[nodiscard]] std::optional<SchemeData> loadState();
 

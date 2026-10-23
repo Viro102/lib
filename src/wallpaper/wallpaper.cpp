@@ -18,6 +18,10 @@ namespace caelestia::wallpaper {
 
 using Qt::StringLiterals::operator""_s;
 
+QString statePath() {
+    return config::ConfigPaths::stateDir() + u"/wallpaper/path.txt"_s;
+}
+
 namespace {
 
 Q_LOGGING_CATEGORY(lcWallpaper, "caelestia.wallpaper", QtInfoMsg)
@@ -25,10 +29,6 @@ Q_LOGGING_CATEGORY(lcWallpaper, "caelestia.wallpaper", QtInfoMsg)
 constexpr double k_neutralColourfulness = 10;
 constexpr double k_contentColourfulness = 20;
 constexpr double k_lightTone = 60;
-
-QString statePath() {
-    return config::ConfigPaths::stateDir() + u"/wallpaper/path.txt"_s;
-}
 
 bool writeState(const QString& path) {
     QDir().mkpath(QFileInfo(statePath()).absolutePath());
