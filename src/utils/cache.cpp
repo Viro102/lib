@@ -2,6 +2,7 @@
 
 #include <qcryptographichash.h>
 #include <qdatetime.h>
+#include <qfile.h>
 #include <qfileinfo.h>
 #include <qpromise.h>
 #include <qstandardpaths.h>
@@ -135,6 +136,20 @@ QFuture<QUrl> FileCache::lookup(const QString& key) const {
     return lookupOn(worker(), [worker = fileWorker(), key] {
         return worker->read(key);
     });
+}
+
+QUrl FileCache::lookupSync(const QString& key) const {
+    const auto path = pathFor(key);
+    if (key.isEmpty() || !QFile::exists(path))
+        return {};
+
+    QMetaObject::invokeMethod(
+        worker(),
+        [worker = worker(), key] {
+            worker->touch(key);
+        },
+        Qt::QueuedConnection);
+    return QUrl::fromLocalFile(path);
 }
 
 FileCacheWorker* FileCache::fileWorker() const {

@@ -54,6 +54,7 @@ public:
     [[nodiscard]] QString pathFor(const QString& key) const;
 
     [[nodiscard]] QFuture<QUrl> lookup(const QString& key) const;
+    [[nodiscard]] QUrl lookupSync(const QString& key) const;
 
 private:
     [[nodiscard]] FileCacheWorker* fileWorker() const;
