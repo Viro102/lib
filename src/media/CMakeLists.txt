@@ -1,7 +1,7 @@
 include(FetchContent)
 FetchContent_Declare(m3colours
     GIT_REPOSITORY https://github.com/soramanew/m3colours.git
-    GIT_TAG        66121b6cb43ab0f3f0d96e7b10c48f2fedb13cf1
+    GIT_TAG        f38b9185357d22bd1b63e7dd14c0c044c268c4cd
 )
 FetchContent_MakeAvailable(m3colours)
 

@@ -51,7 +51,7 @@ QByteArray coloursToBytes(const SchemeColours& colours) {
 }
 
 constexpr int k_maxSize = 1024 * 1024;
-constexpr int k_cacheVersion = 2;
+constexpr int k_cacheVersion = 3;
 
 constexpr std::array k_variants = {
     std::pair{ DynamicVariant::Monochrome, QStringView(u"monochrome") },

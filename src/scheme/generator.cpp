@@ -161,7 +161,7 @@ QColor adjusted(Argb colour, Argb blendColour, DynamicVariant flavour, Mode mode
     if (flavour == DynamicVariant::Monochrome)
         return QColor::fromRgba(grayscale(colour, mode).value());
 
-    Hct hct(m3colours::blend::harmonise(colour, blendColour));
+    Hct hct(m3colours::blend::harmonise(colour, blendColour, 100.0));
     hct.setTone(hct.tone() * (1.0 + toneBoost));
 
     if (flavour == DynamicVariant::Neutral)
