@@ -96,7 +96,8 @@ DynamicScheme::DynamicScheme(QColor colour)
     : Scheme(u"dynamic"_s, variantNames())
     , m_colour(colour) {}
 
-QList<Mode> DynamicScheme::modes(const QString& /*flavour*/) const {
+QList<Mode> DynamicScheme::modes(const QString& flavour) const {
+    Q_UNUSED(flavour);
     return { Mode::Light, Mode::Dark };
 }
 
