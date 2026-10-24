@@ -3,6 +3,7 @@ add_library(caelestia-scheme OBJECT
     filescheme.cpp
     generator.cpp
     scheme.cpp
+    smart.cpp
 )
 target_link_libraries(caelestia-scheme
     PUBLIC

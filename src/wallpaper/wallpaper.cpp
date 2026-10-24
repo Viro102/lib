@@ -12,6 +12,7 @@
 #include "caelestia/config/paths.hpp"
 #include "caelestia/media/analysis.hpp"
 #include "caelestia/scheme/scheme.hpp"
+#include "caelestia/scheme/smart.hpp"
 #include "caelestia/theme/theme.hpp"
 
 namespace caelestia::wallpaper {
@@ -25,10 +26,6 @@ QString statePath() {
 namespace {
 
 Q_LOGGING_CATEGORY(lcWallpaper, "caelestia.wallpaper", QtInfoMsg)
-
-constexpr double k_neutralColourfulness = 10;
-constexpr double k_contentColourfulness = 20;
-constexpr double k_lightTone = 60;
 
 bool writeState(const QString& path) {
     QDir().mkpath(QFileInfo(statePath()).absolutePath());
@@ -46,18 +43,6 @@ bool writeState(const QString& path) {
     return true;
 }
 
-QString smartFlavour(const media::Analysis& analysis) {
-    if (analysis.colourfulness < k_neutralColourfulness)
-        return u"neutral"_s;
-    if (analysis.colourfulness < k_contentColourfulness)
-        return u"content"_s;
-    return u"tonalspot"_s;
-}
-
-scheme::Mode smartMode(const media::Analysis& analysis) {
-    return analysis.tone > k_lightTone ? scheme::Mode::Light : scheme::Mode::Dark;
-}
-
 QFuture<scheme::SchemeData> dynamicScheme(const QString& path, const scheme::SchemeData& state, bool smart) {
     return media::analyseForPath(path)
         .then([path, state, smart](const media::Analysis& analysis) {
@@ -67,14 +52,15 @@ QFuture<scheme::SchemeData> dynamicScheme(const QString& path, const scheme::Sch
             }
 
             const auto scheme = scheme::Scheme::forColour(analysis.colours.first());
+            const auto choice = scheme::smartChoice(analysis);
             auto flavour = smart ? std::nullopt : scheme->flavour(state.flavour);
             if (!flavour) {
                 if (!smart)
                     qCWarning(lcWallpaper) << "Unknown variant" << state.flavour << "- using smart variant";
-                flavour = scheme->flavour(smartFlavour(analysis));
+                flavour = scheme->flavour(choice.flavour);
             }
 
-            const auto mode = smart ? smartMode(analysis) : state.mode;
+            const auto mode = smart ? choice.mode : state.mode;
             return flavour->data(mode);
         })
         .unwrap();
