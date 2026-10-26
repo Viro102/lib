@@ -2,6 +2,8 @@
 #include <qfile.h>
 #include <qfileinfo.h>
 #include <qimage.h>
+#include <qjsondocument.h>
+#include <qjsonobject.h>
 #include <qtemporarydir.h>
 #include <qtest.h>
 
@@ -86,6 +88,59 @@ private slots:
     void currentReadsState() {
         writeFile(wallpaper::statePath(), (m_blue + u"\n"_s).toUtf8());
         QCOMPARE(wallpaper::currentWallpaper(), m_blue);
+    }
+
+    void currentSchemeReturnsValidState() {
+        const auto seed = scheme::defaultScheme().result();
+        QVERIFY(scheme::saveState(seed));
+
+        bool ok = false;
+        const auto data = wallpaper::currentScheme(&ok).result();
+        QVERIFY(ok);
+        QCOMPARE(data.name, seed.name);
+        QCOMPARE(data.colours.primary, seed.colours.primary);
+    }
+
+    void currentSchemeRegeneratesFileSchemeWithBadColours() {
+        const auto seed = scheme::defaultScheme().result();
+        auto json = scheme::toJson(
+            { .name = u"catppuccin"_s, .flavour = u"latte"_s, .mode = scheme::Mode::Light, .colours = seed.colours });
+        auto colours = json[u"colours"_s].toObject();
+        colours[u"primary"_s] = u"nope"_s;
+        json[u"colours"_s] = colours;
+        writeFile(scheme::statePath(), QJsonDocument(json).toJson());
+
+        bool ok = true;
+        const auto data = wallpaper::currentScheme(&ok).result();
+        QVERIFY(!ok);
+        QCOMPARE(data.name, u"catppuccin"_s);
+        QCOMPARE(data.flavour, u"latte"_s);
+        QCOMPARE(data.mode, scheme::Mode::Light);
+        QVERIFY(data.colours.primary.isValid());
+    }
+
+    void currentSchemeRegeneratesDynamicSchemeFromWallpaper() {
+        writeFile(wallpaper::statePath(), m_blue.toUtf8());
+        const auto seed = scheme::defaultScheme().result();
+        auto json = scheme::toJson(
+            { .name = u"dynamic"_s, .flavour = u"vibrant"_s, .mode = scheme::Mode::Light, .colours = seed.colours });
+        json.remove(u"colours"_s);
+        writeFile(scheme::statePath(), QJsonDocument(json).toJson());
+
+        bool ok = true;
+        const auto data = wallpaper::currentScheme(&ok).result();
+        QVERIFY(!ok);
+        QCOMPARE(data.name, u"dynamic"_s);
+        QCOMPARE(data.flavour, u"vibrant"_s);
+        QCOMPARE(data.mode, scheme::Mode::Light);
+        QVERIFY(data.colours.primary != seed.colours.primary);
+    }
+
+    void currentSchemeFallsBackToDefaultWithoutIdentity() {
+        bool ok = true;
+        const auto data = wallpaper::currentScheme(&ok).result();
+        QVERIFY(!ok);
+        QCOMPARE(data.name, u"caelestia"_s);
     }
 
     void setRejectsUnsupportedFiles() {

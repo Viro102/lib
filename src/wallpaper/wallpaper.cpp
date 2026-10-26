@@ -43,12 +43,12 @@ bool writeState(const QString& path) {
     return true;
 }
 
-QFuture<scheme::SchemeData> dynamicScheme(const QString& path, const scheme::SchemeData& state, bool smart) {
+QFuture<scheme::SchemeData> dynamicScheme(const QString& path, const scheme::SchemeRef& state, bool smart) {
     return media::analyseForPath(path)
         .then([path, state, smart](const media::Analysis& analysis) {
             if (analysis.colours.isEmpty()) {
-                qCWarning(lcWallpaper) << "No colours found in" << path << "- keeping current colours";
-                return QtFuture::makeReadyValueFuture(state);
+                qCWarning(lcWallpaper) << "No colours found in" << path << "- using default scheme";
+                return scheme::defaultScheme();
             }
 
             const auto scheme = scheme::Scheme::forColour(analysis.colours.first());
@@ -66,7 +66,7 @@ QFuture<scheme::SchemeData> dynamicScheme(const QString& path, const scheme::Sch
         .unwrap();
 }
 
-QFuture<scheme::SchemeData> fileScheme(const scheme::SchemeData& state) {
+QFuture<scheme::SchemeData> fileScheme(const scheme::SchemeRef& state) {
     return scheme::Scheme::forName(state.name)
         .then([state](const std::shared_ptr<scheme::Scheme>& scheme) {
             if (!scheme) {
@@ -95,7 +95,7 @@ QFuture<scheme::SchemeData> fileScheme(const scheme::SchemeData& state) {
 }
 
 QFuture<scheme::SchemeData> resolveScheme(const QString& path, bool smart) {
-    const auto state = scheme::loadState();
+    const auto state = scheme::loadStateRef();
     if (!state)
         return scheme::defaultScheme();
     if (state->name == u"dynamic"_s)
@@ -104,6 +104,18 @@ QFuture<scheme::SchemeData> resolveScheme(const QString& path, bool smart) {
 }
 
 } // namespace
+
+QFuture<scheme::SchemeData> currentScheme(bool* ok) {
+    auto state = scheme::loadState();
+    if (ok)
+        *ok = state.has_value();
+    if (state)
+        return QtFuture::makeReadyValueFuture(std::move(*state));
+
+    const auto path = currentWallpaper();
+    qCWarning(lcWallpaper) << "Scheme state's colours are invalid - regenerating from" << path;
+    return resolveScheme(path, false);
+}
 
 QString defaultWallpaper() {
     return QStringLiteral(CAELESTIA_DEFAULT_WALLPAPER);

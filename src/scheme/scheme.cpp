@@ -49,6 +49,23 @@ std::optional<Mode> modeFromName(const QString& name) {
     return std::nullopt;
 }
 
+std::optional<QJsonObject> readStateJson() {
+    QFile file(statePath());
+    if (!file.open(QIODevice::ReadOnly)) {
+        qCWarning(lcScheme) << "Unable to open" << file.fileName() << file.errorString();
+        return std::nullopt;
+    }
+
+    QJsonParseError error;
+    const auto doc = QJsonDocument::fromJson(file.readAll(), &error);
+    if (!doc.isObject()) {
+        qCWarning(lcScheme) << "Invalid" << file.fileName() << error.errorString();
+        return std::nullopt;
+    }
+
+    return doc.object();
+}
+
 } // namespace
 
 QJsonObject toJson(const SchemeData& data) {
@@ -69,16 +86,23 @@ QString statePath() {
     return config::ConfigPaths::stateDir() + u"/scheme.json"_s;
 }
 
-std::optional<SchemeData> fromJson(const QJsonObject& json) {
+std::optional<SchemeRef> refFromJson(const QJsonObject& json) {
     const auto name = json[u"name"_s].toString();
     const auto flavour = json[u"flavour"_s].toString();
     const auto mode = modeFromName(json[u"mode"_s].toString());
-    const auto colours = json[u"colours"_s].toObject();
     if (name.isEmpty() || flavour.isEmpty() || !mode) {
         qCWarning(lcScheme) << "Scheme state is missing name, flavour or mode";
         return std::nullopt;
     }
+    return SchemeRef{ .name = name, .flavour = flavour, .mode = *mode };
+}
 
+std::optional<SchemeData> fromJson(const QJsonObject& json) {
+    const auto ref = refFromJson(json);
+    if (!ref)
+        return std::nullopt;
+
+    const auto colours = json[u"colours"_s].toObject();
     bool complete = true;
     const auto colour = [&](const QString& key) -> QColor {
         const auto parsed = colourFromJson(colours[key]);
@@ -96,7 +120,7 @@ std::optional<SchemeData> fromJson(const QJsonObject& json) {
 
     if (!complete)
         return std::nullopt;
-    return SchemeData{ .name = name, .flavour = flavour, .mode = *mode, .colours = result };
+    return SchemeData{ .name = ref->name, .flavour = ref->flavour, .mode = ref->mode, .colours = result };
 }
 
 QFuture<SchemeData> defaultScheme() {
@@ -124,21 +148,14 @@ bool saveState(const SchemeData& data) {
     return true;
 }
 
+std::optional<SchemeRef> loadStateRef() {
+    const auto json = readStateJson();
+    return json ? refFromJson(*json) : std::nullopt;
+}
+
 std::optional<SchemeData> loadState() {
-    QFile file(statePath());
-    if (!file.open(QIODevice::ReadOnly)) {
-        qCWarning(lcScheme) << "Unable to open" << file.fileName() << file.errorString();
-        return std::nullopt;
-    }
-
-    QJsonParseError error;
-    const auto doc = QJsonDocument::fromJson(file.readAll(), &error);
-    if (!doc.isObject()) {
-        qCWarning(lcScheme) << "Invalid" << file.fileName() << error.errorString();
-        return std::nullopt;
-    }
-
-    return fromJson(doc.object());
+    const auto json = readStateJson();
+    return json ? fromJson(*json) : std::nullopt;
 }
 
 Flavour::Flavour(std::shared_ptr<const Scheme> scheme, QString name)

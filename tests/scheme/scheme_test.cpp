@@ -395,10 +395,17 @@ private slots:
         json[u"colours"_s] = colours;
         writeFile(statePath(), QJsonDocument(json).toJson());
         QVERIFY(!loadState().has_value());
+        const auto ref = loadStateRef();
+        if (!ref)
+            QFAIL("loadStateRef returned nullopt");
+        QCOMPARE(ref->name, u"catppuccin"_s);
+        QCOMPARE(ref->flavour, u"mocha"_s);
+        QCOMPARE(ref->mode, Mode::Dark);
 
         json[u"mode"_s] = u"dusk"_s;
         writeFile(statePath(), QJsonDocument(json).toJson());
         QVERIFY(!loadState().has_value());
+        QVERIFY(!loadStateRef().has_value());
     }
 
     void dynamicSchemeIgnoresWrongSizedCache() {

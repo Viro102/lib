@@ -123,6 +123,12 @@ enum class Mode : quint8 {
     Dark,
 };
 
+struct SchemeRef {
+    QString name;
+    QString flavour;
+    Mode mode;
+};
+
 struct SchemeData {
     QString name;
     QString flavour;
@@ -139,11 +145,13 @@ QList<NamedColour> namedColours(const SchemeColours& colours);
 QString modeName(Mode mode);
 
 [[nodiscard]] QJsonObject toJson(const SchemeData& data);
+[[nodiscard]] std::optional<SchemeRef> refFromJson(const QJsonObject& json);
 [[nodiscard]] std::optional<SchemeData> fromJson(const QJsonObject& json);
 
 QFuture<SchemeData> defaultScheme();
 [[nodiscard]] QString statePath();
 bool saveState(const SchemeData& data);
+[[nodiscard]] std::optional<SchemeRef> loadStateRef();
 [[nodiscard]] std::optional<SchemeData> loadState();
 
 class Scheme;
