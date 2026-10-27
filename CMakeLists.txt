@@ -1,21 +1,10 @@
 cmake_minimum_required(VERSION 3.25)
 
-if(NOT DEFINED VERSION)
-    execute_process(COMMAND git describe --tags --abbrev=0
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-        OUTPUT_VARIABLE VERSION
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-
-    if("${VERSION}" STREQUAL "")
-        message(FATAL_ERROR "VERSION is not set and failed to get from git")
-    endif()
-endif()
-
-string(REGEX REPLACE "^v" "" VERSION "${VERSION}")
+include(cmake/caelestiaSetup.cmake)
+caelestia_version()
 
 project(caelestia VERSION ${VERSION} LANGUAGES CXX)
+caelestia_setup()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,7 +29,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wunused-lambda-capture -Wno-nonportable-include-path)
 endif()
 
-include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Network Sql)
@@ -103,6 +91,7 @@ write_basic_package_version_file(
 install(FILES
     ${CMAKE_BINARY_DIR}/caelestiaConfig.cmake
     ${CMAKE_BINARY_DIR}/caelestiaConfigVersion.cmake
+    cmake/caelestiaSetup.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/caelestia
 )
 

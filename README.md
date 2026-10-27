@@ -10,7 +10,7 @@ A shared C++ library for [Caelestia](https://github.com/caelestia-dots).
 | `media`     | Image/video colour analysis                               |
 | `scheme`    | Material 3 scheme generation                              |
 | `theme`     | Apply schemes to apps                                     |
-| `utils`     | File and blob caches                                      |
+| `utils`     | File and blob caches, component registry                  |
 | `wallpaper` | Current wallpaper state and wallpaper-driven schemes      |
 
 ## Dependencies
@@ -46,5 +46,6 @@ This library is designed to be consumed via `CMake`'s `find_package` like so:
 
 ```cmake
 find_package(caelestia REQUIRED)
+caelestia_setup()
 target_link_libraries(myapp PRIVATE caelestia::caelestia)
 ```

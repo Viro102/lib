@@ -1,5 +1,6 @@
 add_library(caelestia-utils OBJECT
     cache.cpp
+    components.cpp
     cacheworker.cpp
 )
 target_link_libraries(caelestia-utils
