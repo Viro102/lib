@@ -49,3 +49,6 @@ find_package(caelestia REQUIRED)
 caelestia_setup()
 target_link_libraries(myapp PRIVATE caelestia::caelestia)
 ```
+
+An optional `caelestia_setup_warnings()` macro is available for enabling strict
+warnings (Qt cast disables + strict build warnings).

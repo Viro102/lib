@@ -5,29 +5,12 @@ caelestia_version()
 
 project(caelestia VERSION ${VERSION} LANGUAGES CXX)
 caelestia_setup()
+caelestia_setup_warnings()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-add_compile_definitions(
-    QT_NO_CAST_FROM_ASCII
-    QT_NO_CAST_TO_ASCII
-    QT_NO_CAST_FROM_BYTEARRAY
-)
-
-add_compile_options(
-    -Wall -Wextra -Wpedantic -Wshadow -Wconversion
-    -Wold-style-cast -Wnull-dereference -Wdouble-promotion
-    -Wformat=2 -Wfloat-equal -Woverloaded-virtual
-    -Wsign-conversion -Wredundant-decls -Wswitch
-    -Wunreachable-code
-)
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wunused-lambda-capture -Wno-nonportable-include-path)
-endif()
 
 include(CMakePackageConfigHelpers)
 
