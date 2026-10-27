@@ -4,7 +4,7 @@ include(cmake/caelestiaSetup.cmake)
 caelestia_version()
 
 project(caelestia VERSION ${VERSION} LANGUAGES CXX)
-caelestia_setup()
+caelestia_setup(caelestia-lib)
 caelestia_setup_warnings()
 
 set(CMAKE_CXX_STANDARD 20)

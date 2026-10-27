@@ -19,6 +19,11 @@ macro(caelestia_setup)
     include(GNUInstallDirs)
     caelestia_version()
 
+    set(caelestia_component "${PROJECT_NAME}")
+    if(${ARGC} GREATER 0)
+        set(caelestia_component "${ARGV0}")
+    endif()
+
     set(DISTRIBUTOR "Unset" CACHE STRING "Name of the party distributing this build")
 
     if(NOT DEFINED GIT_REVISION)
@@ -34,7 +39,7 @@ macro(caelestia_setup)
         endif()
     endif()
 
-    set(caelestia_manifest "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.ini")
+    set(caelestia_manifest "${CMAKE_CURRENT_BINARY_DIR}/${caelestia_component}.ini")
     file(WRITE "${caelestia_manifest}"
         "[Component]\n"
         "Version=${VERSION}\n"
@@ -43,6 +48,7 @@ macro(caelestia_setup)
     )
     install(FILES "${caelestia_manifest}" DESTINATION "${CMAKE_INSTALL_DATADIR}/caelestia/components")
     unset(caelestia_manifest)
+    unset(caelestia_component)
 endmacro()
 
 macro(caelestia_setup_warnings)
