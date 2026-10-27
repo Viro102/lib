@@ -123,8 +123,11 @@ QString defaultWallpaper() {
 
 QString currentWallpaper(bool* ok) {
     QFile file(statePath());
-    if (!file.open(QIODevice::ReadOnly))
+    if (!file.open(QIODevice::ReadOnly)) {
+        if (ok)
+            *ok = false;
         return defaultWallpaper();
+    }
 
     const auto path = QString::fromUtf8(file.readAll()).trimmed();
     const auto pathValid = media::isSupported(path);
