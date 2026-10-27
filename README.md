@@ -21,7 +21,7 @@ A shared C++ library for [Caelestia](https://github.com/caelestia-dots).
 ## Installation
 
 ```sh
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
 cmake --build build
 sudo cmake --install build
 ```
